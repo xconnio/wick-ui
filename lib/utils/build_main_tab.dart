@@ -56,7 +56,7 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
 
   void _updateButtonState() {
     setState(() {
-      _isButtonEnabled = _areAllTextFieldsFilled();
+      _isButtonEnabled = _areAllTextFieldsFilled() && _isDropdownSelected();
     });
   }
 
@@ -65,6 +65,10 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
     final text2 = widget.tabControllerProvider.tabData[widget.index].realmController.text;
     final text3 = widget.tabControllerProvider.tabData[widget.index].topicProcedureController.text;
     return text1.isNotEmpty && text2.isNotEmpty && text3.isNotEmpty;
+  }
+
+  bool _isDropdownSelected() {
+    return widget.tabControllerProvider.tabData[widget.index].selectedSerializer.isNotEmpty;
   }
 
   void _updateTextFieldHeight() {
@@ -303,6 +307,7 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
               onChanged: (String? newValue) {
                 setState(() {
                   tabControllerProvider.tabData[index].selectedSerializer = newValue!;
+                  _updateButtonState();
                 });
               },
             ),
