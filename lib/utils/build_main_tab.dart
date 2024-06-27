@@ -44,6 +44,7 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
   late ResultProvider resultProvider;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   double _textFieldHeight = 0;
+  bool _isButtonEnabled = false;
 
   @override
   void initState() {
@@ -51,6 +52,19 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateTextFieldHeight();
     });
+  }
+
+  void _updateButtonState() {
+    setState(() {
+      _isButtonEnabled = _areAllTextFieldsFilled();
+    });
+  }
+
+  bool _areAllTextFieldsFilled() {
+    final text1 = widget.tabControllerProvider.tabData[widget.index].linkController.text;
+    final text2 = widget.tabControllerProvider.tabData[widget.index].realmController.text;
+    final text3 = widget.tabControllerProvider.tabData[widget.index].topicProcedureController.text;
+    return text1.isNotEmpty && text2.isNotEmpty && text3.isNotEmpty;
   }
 
   void _updateTextFieldHeight() {
@@ -150,6 +164,9 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
                 builder: (BuildContext context, BoxConstraints constraints) {
                   return TextFormField(
                     key: formKey,
+                    onChanged: (text) {
+                      _updateButtonState();
+                    },
                     controller: tabControllerProvider.tabData[index].linkController,
                     decoration: const InputDecoration(
                       hintText: "ws://localhost:8080/ws",
@@ -169,7 +186,7 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
                       if (!result) {
                         return "Enter a valid WebSocket URL";
                       }
-                      return null; // return null if the validation passes
+                      return null;
                     },
                   );
                 },
@@ -293,6 +310,9 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
           const SizedBox(width: 10),
           Expanded(
             child: TextFormField(
+              onChanged: (text) {
+                _updateButtonState();
+              },
               controller: tabControllerProvider.tabData[index].realmController,
               decoration: InputDecoration(
                 hintText: "Enter realm here",
@@ -455,24 +475,26 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
         width: buttonWidth,
         height: _textFieldHeight,
         child: ElevatedButton(
-          onPressed: () async {
-            if (label == "UnRegister" ||
-                label == "UnSubscribe" ||
-                (widget.formKey?.currentState?.validate() ?? false)) {
-              try {
-                await action();
-              } on Exception catch (error) {
-                if (context.mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text("Send Button Error: $error"),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
+          onPressed: _isButtonEnabled
+              ? () async {
+                  if (label == "UnRegister" ||
+                      label == "UnSubscribe" ||
+                      (widget.formKey?.currentState?.validate() ?? false)) {
+                    try {
+                      await action();
+                    } on Exception catch (error) {
+                      if (context.mounted) {
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(
+                            content: Text("Send Button Error: $error"),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  }
                 }
-              }
-            }
-          },
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
             shape: const RoundedRectangleBorder(
@@ -742,6 +764,9 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: TextFormField(
+        onChanged: (text) {
+          _updateButtonState();
+        },
         controller: controller,
         decoration: InputDecoration(
           hintText: sendButtonText.contains("Publish") || sendButtonText.contains("Subscribe")
