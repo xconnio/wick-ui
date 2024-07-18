@@ -51,7 +51,21 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateTextFieldHeight();
+      _updateButtonState();
+      widget.tabControllerProvider.tabController.addListener(_handleTabChange);
     });
+  }
+
+  void _handleTabChange() {
+    if (widget.tabControllerProvider.tabController.indexIsChanging) {
+      _updateButtonState();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.tabControllerProvider.tabController.removeListener(_handleTabChange);
+    super.dispose();
   }
 
   void _updateButtonState() {
@@ -482,9 +496,9 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
         child: ElevatedButton(
           onPressed: _isButtonEnabled
               ? () async {
-                  if (label == "UnRegister" ||
-                      label == "UnSubscribe" ||
-                      (widget.formKey?.currentState?.validate() ?? false)) {
+                  bool isUnregisterOrUnsubscribe = label == "UnRegister" || label == "UnSubscribe";
+                  bool isFormValid = widget.formKey?.currentState?.validate() ?? false;
+                  if (isUnregisterOrUnsubscribe || isFormValid) {
                     try {
                       await action();
                     } on Exception catch (error) {
@@ -502,6 +516,7 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
               : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
+            disabledBackgroundColor: Colors.grey,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(10),
