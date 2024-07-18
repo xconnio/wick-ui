@@ -44,13 +44,45 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
   late ResultProvider resultProvider;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   double _textFieldHeight = 0;
+  bool _isButtonEnabled = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateTextFieldHeight();
+      _updateButtonState();
+      widget.tabControllerProvider.tabController.addListener(_handleTabChange);
     });
+  }
+
+  void _handleTabChange() {
+    if (widget.tabControllerProvider.tabController.indexIsChanging) {
+      _updateButtonState();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.tabControllerProvider.tabController.removeListener(_handleTabChange);
+    super.dispose();
+  }
+
+  void _updateButtonState() {
+    setState(() {
+      _isButtonEnabled = _areAllTextFieldsFilled() && _isDropdownSelected();
+    });
+  }
+
+  bool _areAllTextFieldsFilled() {
+    final text1 = widget.tabControllerProvider.tabData[widget.index].linkController.text;
+    final text2 = widget.tabControllerProvider.tabData[widget.index].realmController.text;
+    final text3 = widget.tabControllerProvider.tabData[widget.index].topicProcedureController.text;
+    return text1.isNotEmpty && text2.isNotEmpty && text3.isNotEmpty;
+  }
+
+  bool _isDropdownSelected() {
+    return widget.tabControllerProvider.tabData[widget.index].selectedSerializer.isNotEmpty;
   }
 
   void _updateTextFieldHeight() {
@@ -150,6 +182,9 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
                 builder: (BuildContext context, BoxConstraints constraints) {
                   return TextFormField(
                     key: formKey,
+                    onChanged: (text) {
+                      _updateButtonState();
+                    },
                     controller: tabControllerProvider.tabData[index].linkController,
                     decoration: const InputDecoration(
                       hintText: "ws://localhost:8080/ws",
@@ -169,7 +204,7 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
                       if (!result) {
                         return "Enter a valid WebSocket URL";
                       }
-                      return null; // return null if the validation passes
+                      return null;
                     },
                   );
                 },
@@ -286,6 +321,7 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
               onChanged: (String? newValue) {
                 setState(() {
                   tabControllerProvider.tabData[index].selectedSerializer = newValue!;
+                  _updateButtonState();
                 });
               },
             ),
@@ -293,6 +329,9 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
           const SizedBox(width: 10),
           Expanded(
             child: TextFormField(
+              onChanged: (text) {
+                _updateButtonState();
+              },
               controller: tabControllerProvider.tabData[index].realmController,
               decoration: InputDecoration(
                 hintText: "Enter realm here",
@@ -455,26 +494,29 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
         width: buttonWidth,
         height: _textFieldHeight,
         child: ElevatedButton(
-          onPressed: () async {
-            if (label == "UnRegister" ||
-                label == "UnSubscribe" ||
-                (widget.formKey?.currentState?.validate() ?? false)) {
-              try {
-                await action();
-              } on Exception catch (error) {
-                if (context.mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text("Send Button Error: $error"),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
+          onPressed: _isButtonEnabled
+              ? () async {
+                  bool isUnregisterOrUnsubscribe = label == "UnRegister" || label == "UnSubscribe";
+                  bool isFormValid = widget.formKey?.currentState?.validate() ?? false;
+                  if (isUnregisterOrUnsubscribe || isFormValid) {
+                    try {
+                      await action();
+                    } on Exception catch (error) {
+                      if (context.mounted) {
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(
+                            content: Text("Send Button Error: $error"),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  }
                 }
-              }
-            }
-          },
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
+            disabledBackgroundColor: Colors.grey,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(10),
@@ -742,6 +784,9 @@ class _BuildMainTabState extends State<BuildMainTab> with TickerProviderStateMix
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: TextFormField(
+        onChanged: (text) {
+          _updateButtonState();
+        },
         controller: controller,
         decoration: InputDecoration(
           hintText: sendButtonText.contains("Publish") || sendButtonText.contains("Subscribe")
