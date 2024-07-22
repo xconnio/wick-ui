@@ -29,11 +29,11 @@ Future<Session> connect(
   Client client;
 
   if (ticket != null) {
-    client = Client(serializer: serializer, authenticator: TicketAuthenticator(ticket, authid ?? ""));
+    client = Client(serializer: serializer, authenticator: TicketAuthenticator(authid ?? "", {}, ticket));
   } else if (secret != null) {
-    client = Client(serializer: serializer, authenticator: WAMPCRAAuthenticator(secret, authid ?? "", {}));
+    client = Client(serializer: serializer, authenticator: WAMPCRAAuthenticator(authid ?? "", {}, secret));
   } else if (privateKey != null) {
-    client = Client(serializer: serializer, authenticator: CryptoSignAuthenticator(authid ?? "", privateKey));
+    client = Client(serializer: serializer, authenticator: CryptoSignAuthenticator(authid ?? "", {}, privateKey));
   } else {
     client = Client(serializer: serializer);
   }
