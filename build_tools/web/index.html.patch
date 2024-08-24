@@ -1,0 +1,12 @@
+--- a/build/web/index.html
++++ b/build/web/index.html
+@@ -56,6 +56,9 @@
+         }
+       });
+     });
++    const serviceWorkerActivation = navigator.serviceWorker.register(
++    "flutter_service_worker.js?v=" + serviceWorkerVersion
++    );
+   </script>
+ </body>
+ </html>

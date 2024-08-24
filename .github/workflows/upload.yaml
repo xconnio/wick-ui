@@ -23,6 +23,11 @@ jobs:
       - name: Build web app
         run: make build-web-ci
 
+      - name: Run post-build script to download files concurrently
+        run: |
+          chmod +x ./build_tools/patch_web.sh
+          sh ./build_tools/patch_web.sh --ignore-whitespace
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
