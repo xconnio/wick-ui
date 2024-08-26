@@ -23,4 +23,4 @@ build-web:
 	flutter build web --release
 
 build-web-ci:
-	flutter build web --release --web-renderer html --base-href "/wick/"
+	flutter build web --release --base-href "/wick/"
