@@ -1,0 +1,36 @@
+name: XConnUI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.22.1
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Verify formatting
+        run: make check-format
+
+      - name: Check lint
+        run: make lint
+
+      - name: Build APK
+        run: make build-apk
+
+      - name: Run tests
+        run: make tests

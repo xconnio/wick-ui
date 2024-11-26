@@ -1,0 +1,51 @@
+--- a/build/web/flutter_service_worker.js
++++ b/build/web/flutter_service_worker.js
+@@ -35,24 +35,7 @@ const RESOURCES = {"manifest.json": "9299ff7e3d36accac68af01622c84ef9",
+ "assets/packages/fluttertoast/assets/toastify.js": "56e2c9cedd97f10e7e5f1cebd85d53e3",
+ "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
+ "assets/fonts/MaterialIcons-Regular.otf": "f6e96fbdadc7ce52663b2aeaff2ec9ee"};
+-// The application shell files that are downloaded before a service worker can
+-// start.
+-const CORE = ["main.dart.js",
+-"index.html",
+-"flutter_bootstrap.js",
+-"assets/AssetManifest.bin.json",
+-"assets/FontManifest.json"];
+
+-// During install, the TEMP cache is populated with the application shell files.
+-self.addEventListener("install", (event) => {
+-  self.skipWaiting();
+-  return event.waitUntil(
+-    caches.open(TEMP).then((cache) => {
+-      return cache.addAll(
+-        CORE.map((value) => new Request(value, {'cache': 'reload'})));
+-    })
+-  );
+-});
+ // During activate, the cache is populated with the temp files downloaded in
+ // install. If this service worker is upgrading from one with a saved
+ // MANIFEST, then use this to retain unchanged resource files.
+@@ -142,10 +125,21 @@ self.addEventListener("fetch", (event) => {
+       return cache.match(event.request).then((response) => {
+         // Either respond with the cached resource, or perform a fetch and
+         // lazily populate the cache only if the resource was successfully fetched.
+-        return response || fetch(event.request).then((response) => {
++         if (response) {
++                  return response;
++                }
++
++                if (IN_PROCESSING_REQUESTS[key]) {
++                  return IN_PROCESSING_REQUESTS[key].clone();
++                }
++
++                return fetch(event.request).then((response) => {
+           if (response && Boolean(response.ok)) {
+-            cache.put(event.request, response.clone());
++            cache.put(event.request, response.clone())
++                             .then(() => delete IN_PROCESSING_REQUESTS[key]);
+           }
++
++          IN_PROCESSING_REQUESTS[key] = response.clone();
+           return response;
+         });
+       })

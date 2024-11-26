@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Wick Desktop
+Comment=Tools
+Keywords=Tools;
+Exec=wick-desktop
+Icon=${SNAP}/meta/gui/wick.png
+Terminal=false
+Categories=Tools;
