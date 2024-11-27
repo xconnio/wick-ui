@@ -2,15 +2,12 @@ import 'package:get/get.dart';
 import '../../../utils/session_manager.dart';
 import '../../../utils/storage_manager.dart';
 import '../../data/models/profile_model.dart';
-
 import 'package:flutter/material.dart';
 import 'package:xconn/xconn.dart';
 
 class ProfileController extends GetxController {
   var profiles = <ProfileModel>[].obs;
-  var connectionStates = <String, Session?>{}.obs;
-
-  RxBool myConnection = false.obs;
+  var connectedProfiles = <ProfileModel>[].obs; // List of connected profiles
 
   @override
   void onInit() {
@@ -24,18 +21,14 @@ class ProfileController extends GetxController {
 
   Future<void> loadProfiles() async {
     profiles.assignAll(await StorageManager.loadProfiles());
-    profiles.forEach((profile) {
-      connectionStates[profile.authid] = null;
-    });
   }
 
   Future<void> addProfile(ProfileModel profile) async {
     profiles.add(profile);
-    connectionStates[profile.authid] = null;
     await saveProfiles();
     Get.snackbar(
         'Profile Saved', 'Profile for ${profile.authid} saved successfully!',
-        snackPosition: SnackPosition.BOTTOM);
+        snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
   }
 
   Future<void> updateProfile(ProfileModel profile) async {
@@ -45,41 +38,37 @@ class ProfileController extends GetxController {
       await saveProfiles();
       Get.snackbar('Profile Updated',
           'Profile for ${profile.authid} updated successfully!',
-          snackPosition: SnackPosition.BOTTOM);
+          snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
     }
   }
 
   Future<void> deleteProfile(ProfileModel profile) async {
     profiles.removeWhere((p) => p.authid == profile.authid);
-    connectionStates.remove(profile.authid);
+    connectedProfiles.remove(profile); // Remove from connected if exists
     await saveProfiles();
     Get.snackbar('Profile Deleted',
         'Profile for ${profile.authid} deleted successfully!',
-        snackPosition: SnackPosition.BOTTOM);
-  }
-
-  set myConnectionTo(bool value) {
-    myConnection.value = value;
+        snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
   }
 
   void toggleConnection(ProfileModel profile) async {
-    Session? currentSession = connectionStates[profile.authid];
-    if (currentSession != null) {
-      myConnection.value = false;
-      connectionStates[profile.authid] = null;
-      Get.snackbar('Connection Status', 'Disconnected.',
-          snackPosition: SnackPosition.BOTTOM);
+    if (connectedProfiles.contains(profile)) {
+// Disconnect the session
+      connectedProfiles.remove(profile);
+      Get.snackbar('Connection Status', 'Disconnected successfully!',
+          snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
     } else {
       try {
         var session = await SessionManager.connect(profile);
-        connectionStates[profile.authid] = session;
-        myConnection.value = true;
+        connectedProfiles.add(profile);
         Get.snackbar('Connection Status', 'Connected successfully!',
-            snackPosition: SnackPosition.BOTTOM);
-        // myConnection = true.obs;
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 1));
       } catch (e) {
-        Get.snackbar('Error', 'Failed to connect: $e',
-            snackPosition: SnackPosition.BOTTOM);
+        print('Failed to connect: $e');
+        Get.snackbar('Error', 'Failed to connect.',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(microseconds: 1));
       }
     }
   }
@@ -118,13 +107,13 @@ class ProfileController extends GetxController {
                       controller: urlController,
                       decoration: InputDecoration(labelText: 'URL'),
                       validator: (value) =>
-                          value!.isEmpty ? 'Please enter a URL' : null,
+                      value!.isEmpty ? 'Please enter a URL' : null,
                     ),
                     TextFormField(
                       controller: realmController,
                       decoration: InputDecoration(labelText: 'Realm'),
                       validator: (value) =>
-                          value!.isEmpty ? 'Please enter a realm' : null,
+                      value!.isEmpty ? 'Please enter a realm' : null,
                     ),
                     DropdownButtonFormField<String>(
                       value: selectedSerializer,
@@ -141,13 +130,13 @@ class ProfileController extends GetxController {
                         });
                       },
                       validator: (value) =>
-                          value == null ? 'Please select a serializer' : null,
+                      value == null ? 'Please select a serializer' : null,
                     ),
                     TextFormField(
                       controller: authidController,
                       decoration: InputDecoration(labelText: 'Auth ID'),
                       validator: (value) =>
-                          value!.isEmpty ? 'Please enter an auth ID' : null,
+                      value!.isEmpty ? 'Please enter an auth ID' : null,
                     ),
                     DropdownButtonFormField<String>(
                       value: selectedAuthMethod,
@@ -172,21 +161,21 @@ class ProfileController extends GetxController {
                         controller: secretController,
                         decoration: InputDecoration(labelText: 'Ticket'),
                         validator: (value) =>
-                            value!.isEmpty ? 'Please enter a ticket' : null,
+                        value!.isEmpty ? 'Please enter a ticket' : null,
                       ),
                     if (selectedAuthMethod == 'WAMP-CRA')
                       TextFormField(
                         controller: secretController,
                         decoration: InputDecoration(labelText: 'Secret'),
                         validator: (value) =>
-                            value!.isEmpty ? 'Please enter a secret' : null,
+                        value!.isEmpty ? 'Please enter a secret' : null,
                       ),
                     if (selectedAuthMethod == 'CryptoSign')
                       TextFormField(
                         controller: secretController,
                         decoration: InputDecoration(labelText: 'PrivateKey'),
                         validator: (value) =>
-                            value!.isEmpty ? 'PrivateKey required' : null,
+                        value!.isEmpty ? 'PrivateKey required' : null,
                       ),
                   ],
                 ),
@@ -219,17 +208,14 @@ class ProfileController extends GetxController {
                         await updateProfile(newProfile);
                       }
 
-                      Get.snackbar(
-                        'Profile Saved',
-                        'Profile for ${newProfile.authid} saved successfully!',
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
+                      Get.snackbar('Profile Saved',
+                          'Profile for ${newProfile.authid} saved successfully!',
+                          snackPosition: SnackPosition.BOTTOM,
+                          duration: Duration(seconds: 1));
                     } catch (e) {
-                      Get.snackbar(
-                        'Error',
-                        'Failed to save profile: $e',
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
+                      Get.snackbar('Error', 'Failed to save profile: $e',
+                          snackPosition: SnackPosition.BOTTOM,
+                          duration: Duration(seconds: 1));
                     }
                   }
                 },

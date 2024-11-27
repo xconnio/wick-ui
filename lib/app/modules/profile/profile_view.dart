@@ -14,10 +14,6 @@ class ProfileView extends StatelessWidget {
           itemCount: controller.profiles.length,
           itemBuilder: (context, index) {
             final profile = controller.profiles[index];
-            bool isConnected =
-                controller.connectionStates[profile.authid] != null
-                    ? true
-                    : false;
 
             return ListTile(
               title: Text(profile.realm),
@@ -32,30 +28,29 @@ class ProfileView extends StatelessWidget {
                 ],
               ),
               isThreeLine: true,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.edit),
-                    onPressed: () {
-                      controller.createProfile(profile: profile);
-                    },
-                  ),
-                  Obx(() {
-                    return IconButton(
-                        icon: Icon(controller.myConnection.value == true
-                            ? Icons.stop
-                            : Icons.play_arrow),
-                        onPressed: () {
-                          controller.toggleConnection(profile);
-                        });
-                  }),
-                  IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () => controller.deleteProfile(profile),
-                  ),
-                ],
-              ),
+              trailing: Obx(() {
+                bool isConnected =
+                controller.connectedProfiles.contains(profile);
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit),
+                      onPressed: () {
+                        controller.createProfile(profile: profile);
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(isConnected ? Icons.stop : Icons.play_arrow),
+                      onPressed: () => controller.toggleConnection(profile),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () => controller.deleteProfile(profile),
+                    ),
+                  ],
+                );
+              }),
             );
           },
         );
