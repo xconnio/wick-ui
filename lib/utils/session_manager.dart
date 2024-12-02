@@ -1,24 +1,27 @@
 import 'package:xconn/xconn.dart';
 
-import '../app/data/models/profile_model.dart';
-
-class SessionManager {
-  static Future<Session> connect(ProfileModel profile) async {
+mixin SessionManager {
+  static Future<Session> connect(profile) async {
     var serializer = _getSerializer(profile.serializer);
 
     Client client;
     if (profile.authmethod == 'Ticket') {
       client = Client(
           serializer: serializer,
-          authenticator: TicketAuthenticator(profile.authid, {}, profile.secret));
+          authenticator:
+              TicketAuthenticator(profile.authid, {}, profile.secret));
     } else if (profile.authmethod == 'WAMP-CRA') {
+      print(
+          "${profile.authid}, ${profile.secret}   ${profile.url} ${profile.realm}");
       client = Client(
           serializer: serializer,
-          authenticator: WAMPCRAAuthenticator(profile.authid, {}, profile.secret));
+          authenticator:
+              WAMPCRAAuthenticator(profile.authid, {}, profile.secret));
     } else if (profile.authmethod == 'CryptoSign') {
       client = Client(
           serializer: serializer,
-          authenticator: CryptoSignAuthenticator(profile.authid, {}, profile.secret));
+          authenticator:
+              CryptoSignAuthenticator(profile.authid, {}, profile.secret));
     } else if (profile.authmethod == 'Anonymous') {
       client = Client(
           serializer: serializer,
