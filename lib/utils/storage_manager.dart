@@ -22,14 +22,14 @@ mixin StorageManager {
       // Add each profile to the .ini file
       for (var profile in profiles) {
         var section = profile.name;
-        config.addSection(section);
-        config.set(section, "name", profile.name);
-        config.set(section, "url", profile.url);
-        config.set(section, "realm", profile.realm);
-        config.set(section, "serializer", profile.serializer);
-        config.set(section, "authmethod", profile.authmethod);
-        config.set(section, "secret", profile.secret);
-        config.set(section, "authid", profile.authid);
+        config..addSection(section)
+        ..set(section, "name", profile.name)
+        ..set(section, "url", profile.url)
+        ..set(section, "realm", profile.realm)
+        ..set(section, "serializer", profile.serializer)
+        ..set(section, "authmethod", profile.authmethod)
+        ..set(section, "secret", profile.secret)
+        ..set(section, "authid", profile.authid);
       }
 
       // Save the .ini file

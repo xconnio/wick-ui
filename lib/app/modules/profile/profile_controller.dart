@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
 import "package:get/get.dart";
-import 'package:wick_ui/utils/session_manager.dart';
-import 'package:wick_ui/utils/storage_manager.dart';
-import 'package:wick_ui/app/data/models/profile_model.dart';
+import "package:wick_ui/app/data/models/profile_model.dart";
+import "package:wick_ui/utils/session_manager.dart";
+import "package:wick_ui/utils/storage_manager.dart";
 
 class ProfileController extends GetxController {
   var profiles = <ProfileModel>[].obs;
