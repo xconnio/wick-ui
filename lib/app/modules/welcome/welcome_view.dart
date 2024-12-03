@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'welcome_controller.dart';
+import "package:flutter/material.dart";
+import "package:get/get.dart";
+import "package:wick_ui/app/modules/welcome/welcome_controller.dart";
 
 class WelcomeView extends StatelessWidget {
   final WelcomeController controller = Get.find<WelcomeController>();
@@ -10,7 +10,7 @@ class WelcomeView extends StatelessWidget {
     controller.navigateToProfile();
     return Scaffold(
       body: Center(
-        child: Text("Welcome")
+        child: Text("Welcome"),
       ),
     );
   }

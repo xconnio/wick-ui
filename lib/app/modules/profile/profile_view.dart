@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
 import "package:get/get.dart";
-import "profile_controller.dart";
+import "package:wick_ui/app/modules/profile/profile_controller.dart";
 
 class ProfileView extends StatelessWidget {
   final ProfileController controller = Get.find<ProfileController>();

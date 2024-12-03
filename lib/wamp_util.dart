@@ -1,5 +1,5 @@
-import 'package:wick_ui/utils/constants.dart';
-import 'package:xconn/xconn.dart';
+import "package:wick_ui/utils/constants.dart";
+import "package:xconn/xconn.dart";
 
 Serializer _getSerializer(String? serializerString) {
   switch (serializerString) {
@@ -30,22 +30,22 @@ Future<Session> connect(
   if (ticket != null) {
     client = Client(
         serializer: serializer,
-        authenticator: TicketAuthenticator(authid ?? "", {}, ticket)
+        authenticator: TicketAuthenticator(authid ?? "", {}, ticket),
     );
   } else if (secret != null) {
     client = Client(
         serializer: serializer,
-        authenticator: WAMPCRAAuthenticator(authid ?? "", {}, secret)
+        authenticator: WAMPCRAAuthenticator(authid ?? "", {}, secret),
     );
   } else if (privateKey != null) {
     client = Client(
         serializer: serializer,
-        authenticator: CryptoSignAuthenticator(authid ?? "", {}, privateKey)
+        authenticator: CryptoSignAuthenticator(authid ?? "", {}, privateKey),
     );
   } else if (authid != null) {
     client = Client(
         serializer: serializer,
-        authenticator: AnonymousAuthenticator(authid)
+        authenticator: AnonymousAuthenticator(authid),
     );
   } else {
     client = Client(serializer: serializer);
