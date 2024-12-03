@@ -1,13 +1,13 @@
-import "package:flutter/material.dart";
-import "package:get/get.dart";
-import "../../../utils/session_manager.dart";
-import "../../../utils/storage_manager.dart";
-import "../../data/models/profile_model.dart";
+import 'package:get/get.dart';
+import '../../../utils/session_manager.dart';
+import '../../../utils/storage_manager.dart';
+import '../../data/models/profile_model.dart';
+import 'package:flutter/material.dart';
+import 'package:xconn/xconn.dart';
 
 class ProfileController extends GetxController {
   var profiles = <ProfileModel>[].obs;
-  var connectedProfiles = <ProfileModel>[].obs;
-  static const snakbarDisplayTime = Duration(seconds: 1);
+  var connectedProfiles = <ProfileModel>[].obs; // List of connected profiles
 
   @override
   void onInit() {
@@ -27,11 +27,8 @@ class ProfileController extends GetxController {
     profiles.add(profile);
     await saveProfiles();
     Get.snackbar(
-      "Profile",
-      "${profile.name} added successfully!",
-      snackPosition: SnackPosition.BOTTOM,
-      duration: snakbarDisplayTime,
-    );
+        'Profile Saved', 'Profile for ${profile.authid} saved successfully!',
+        snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
   }
 
   Future<void> updateProfile(ProfileModel updatedProfile) async {
@@ -39,53 +36,39 @@ class ProfileController extends GetxController {
     if (index != -1) {
       profiles[index] = updatedProfile;
       await saveProfiles();
-      Get.snackbar(
-        "Profile",
-        "${updatedProfile.name} updated successfully!",
-        snackPosition: SnackPosition.BOTTOM,
-        duration: snakbarDisplayTime,
-      );
+      Get.snackbar('Profile Updated',
+          'Profile for ${profile.authid} updated successfully!',
+          snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
     }
   }
 
   Future<void> deleteProfile(ProfileModel profile) async {
-    profiles.removeWhere((p) => p.name == profile.name);
-    connectedProfiles.remove(profile);
+    profiles.removeWhere((p) => p.authid == profile.authid);
+    connectedProfiles.remove(profile); // Remove from connected if exists
     await saveProfiles();
-    Get.snackbar(
-      "Profile",
-      "${profile.name} deleted!",
-      snackPosition: SnackPosition.BOTTOM,
-      duration: snakbarDisplayTime,
-    );
+    Get.snackbar('Profile Deleted',
+        'Profile for ${profile.authid} deleted successfully!',
+        snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
   }
 
   void toggleConnection(ProfileModel profile) async {
     if (connectedProfiles.contains(profile)) {
+// Disconnect the session
       connectedProfiles.remove(profile);
-      Get.snackbar(
-        "Connection Status",
-        "Profile ${profile.name} disconnected!",
-        snackPosition: SnackPosition.BOTTOM,
-        duration: snakbarDisplayTime,
-      );
+      Get.snackbar('Connection Status', 'Disconnected successfully!',
+          snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
     } else {
       try {
         var session = await SessionManager.connect(profile);
         connectedProfiles.add(profile);
-        Get.snackbar(
-          "Connection Status",
-          "Profile ${profile.name} connected successfully!",
-          snackPosition: SnackPosition.BOTTOM,
-          duration: snakbarDisplayTime,
-        );
+        Get.snackbar('Connection Status', 'Connected successfully!',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 1));
       } catch (e) {
-        Get.snackbar(
-          "Error",
-          "Failed to connect: $e",
-          snackPosition: SnackPosition.BOTTOM,
-          duration: snakbarDisplayTime,
-        );
+        print('Failed to connect: $e');
+        Get.snackbar('Error', 'Failed to connect.',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(microseconds: 1));
       }
     }
   }
@@ -115,50 +98,83 @@ class ProfileController extends GetxController {
             title: Text(profile == null ? "Create Profile" : "Update Profile"),
             content: Form(
               key: formKey,
-              child: Container(
-                width: 100,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: urlController,
+                      decoration: InputDecoration(labelText: 'URL'),
+                      validator: (value) =>
+                      value!.isEmpty ? 'Please enter a URL' : null,
+                    ),
+                    TextFormField(
+                      controller: realmController,
+                      decoration: InputDecoration(labelText: 'Realm'),
+                      validator: (value) =>
+                      value!.isEmpty ? 'Please enter a realm' : null,
+                    ),
+                    DropdownButtonFormField<String>(
+                      value: selectedSerializer,
+                      decoration: InputDecoration(labelText: 'Serializer'),
+                      items: serializers.map((serializer) {
+                        return DropdownMenuItem<String>(
+                          value: serializer,
+                          child: Text(serializer),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedSerializer = value!;
+                        });
+                      },
+                      validator: (value) =>
+                      value == null ? 'Please select a serializer' : null,
+                    ),
+                    TextFormField(
+                      controller: authidController,
+                      decoration: InputDecoration(labelText: 'Auth ID'),
+                      validator: (value) =>
+                      value!.isEmpty ? 'Please enter an auth ID' : null,
+                    ),
+                    DropdownButtonFormField<String>(
+                      value: selectedAuthMethod,
+                      decoration: InputDecoration(labelText: 'Auth Method'),
+                      items: authMethods.map((authMethod) {
+                        return DropdownMenuItem<String>(
+                          value: authMethod,
+                          child: Text(authMethod),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedAuthMethod = value!;
+                        });
+                      },
+                      validator: (value) => value == null
+                          ? 'Please select an authentication method'
+                          : null,
+                    ),
+                    if (selectedAuthMethod == 'Ticket')
                       TextFormField(
-                        controller: nameController,
-                        decoration:
-                            const InputDecoration(labelText: "Profile Name"),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please enter a profile name";
-                          }
-                          if (profiles
-                              .any((p) => p.name == value && p != profile)) {
-                            return "Profile name already exists. Choose a different name.";
-                          }
-                          return null;
-                        },
+                        controller: secretController,
+                        decoration: InputDecoration(labelText: 'Ticket'),
+                        validator: (value) =>
+                        value!.isEmpty ? 'Please enter a ticket' : null,
                       ),
                       SizedBox(height: 8),
                       TextFormField(
-                        controller: urlController,
-                        decoration:
-                            const InputDecoration(labelText: "WAMP URL"),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please enter a URL";
-                          }
-                          if (!value.startsWith("ws://") &&
-                              !value.startsWith("wss://")) {
-                            return "URL must start with ws:// or wss://";
-                          }
-                          return null;
-                        },
+                        controller: secretController,
+                        decoration: InputDecoration(labelText: 'Secret'),
+                        validator: (value) =>
+                        value!.isEmpty ? 'Please enter a secret' : null,
                       ),
                       SizedBox(height: 8),
                       TextFormField(
                         controller: realmController,
                         decoration: InputDecoration(labelText: "Realm"),
                         validator: (value) =>
-                            value!.isEmpty ? "Please enter a realm" : null,
+                        value!.isEmpty ? 'PrivateKey required' : null,
                       ),
                       SizedBox(height: 8),
                       DropdownButtonFormField<String>(
@@ -269,13 +285,14 @@ class ProfileController extends GetxController {
                       } else {
                         await updateProfile(newProfile);
                       }
+                      Get.snackbar('Profile Saved',
+                          'Profile for ${newProfile.authid} saved successfully!',
+                          snackPosition: SnackPosition.BOTTOM,
+                          duration: Duration(seconds: 1));
                     } catch (e) {
-                      Get.snackbar(
-                        "Error",
-                        "Failed to save profile: $e",
-                        snackPosition: SnackPosition.BOTTOM,
-                        duration: snakbarDisplayTime,
-                      );
+                      Get.snackbar('Error', 'Failed to save profile: $e',
+                          snackPosition: SnackPosition.BOTTOM,
+                          duration: Duration(seconds: 1));
                     }
                   }
                 },

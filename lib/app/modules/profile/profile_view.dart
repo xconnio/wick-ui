@@ -37,12 +37,12 @@ class ProfileView extends StatelessWidget {
               isThreeLine: true,
               trailing: Obx(() {
                 bool isConnected =
-                    controller.connectedProfiles.contains(profile);
+                controller.connectedProfiles.contains(profile);
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit),
+                      icon: Icon(Icons.edit),
                       onPressed: () {
                         controller.createProfile(profile: profile);
                       },
@@ -52,7 +52,7 @@ class ProfileView extends StatelessWidget {
                       onPressed: () => controller.toggleConnection(profile),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete),
+                      icon: Icon(Icons.delete),
                       onPressed: () => controller.deleteProfile(profile),
                     ),
                   ],
