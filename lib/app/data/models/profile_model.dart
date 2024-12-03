@@ -19,23 +19,23 @@ class ProfileModel {
 
   // Convert a ProfileModel into a Map. The keys must correspond to the names of the attributes.
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'url': url,
-        'realm': realm,
-        'serializer': serializer,
-        'authid': authid,
-        'authmethod': authmethod,
-        'secret': secret,
+        "name": name,
+        "url": url,
+        "realm": realm,
+        "serializer": serializer,
+        "authid": authid,
+        "authmethod": authmethod,
+        "secret": secret,
       };
 
   // Convert a Map into a ProfileModel.
   factory ProfileModel.fromJson(Map<String, dynamic> json) => ProfileModel(
-        name: json['name'],
-        url: json['url'],
-        realm: json['realm'],
-        serializer: json['serializer'],
-        authid: json['authid'],
-        authmethod: json['authmethod'],
-        secret: json['secret'],
+        name: json["name"],
+        url: json["url"],
+        realm: json["realm"],
+        serializer: json["serializer"],
+        authid: json["authid"],
+        authmethod: json["authmethod"],
+        secret: json["secret"],
       );
 }

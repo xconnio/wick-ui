@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import "package:get/get.dart";
 
 class WelcomeController extends GetxController {
   Future<void> navigateToProfile() async {

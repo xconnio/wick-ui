@@ -1,9 +1,8 @@
-import 'package:get/get.dart';
-import '../../../utils/session_manager.dart';
-import '../../../utils/storage_manager.dart';
-import '../../data/models/profile_model.dart';
-import 'package:flutter/material.dart';
-import 'package:xconn/xconn.dart';
+import "package:flutter/material.dart";
+import "package:get/get.dart";
+import 'package:wick_ui/utils/session_manager.dart';
+import 'package:wick_ui/utils/storage_manager.dart';
+import 'package:wick_ui/app/data/models/profile_model.dart';
 
 class ProfileController extends GetxController {
   var profiles = <ProfileModel>[].obs;
@@ -27,8 +26,11 @@ class ProfileController extends GetxController {
     profiles.add(profile);
     await saveProfiles();
     Get.snackbar(
-        'Profile Saved', 'Profile for ${profile.authid} saved successfully!',
-        snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
+      "Profile Saved",
+      "Profile for ${profile.name} added successfully!",
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 1),
+    );
   }
 
   Future<void> updateProfile(ProfileModel updatedProfile) async {
@@ -36,39 +38,53 @@ class ProfileController extends GetxController {
     if (index != -1) {
       profiles[index] = updatedProfile;
       await saveProfiles();
-      Get.snackbar('Profile Updated',
-          'Profile for ${profile.authid} updated successfully!',
-          snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
+      Get.snackbar(
+        "Profile Updated",
+        "Profile for ${updatedProfile.name} updated successfully!",
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 1),
+      );
     }
   }
 
   Future<void> deleteProfile(ProfileModel profile) async {
-    profiles.removeWhere((p) => p.authid == profile.authid);
-    connectedProfiles.remove(profile); // Remove from connected if exists
+    profiles.removeWhere((p) => p.name == profile.name);
+    connectedProfiles.remove(profile);
     await saveProfiles();
-    Get.snackbar('Profile Deleted',
-        'Profile for ${profile.authid} deleted successfully!',
-        snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
+    Get.snackbar(
+      "Profile Deleted",
+      "Profile for ${profile.name} deleted successfully!",
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 1),
+    );
   }
 
   void toggleConnection(ProfileModel profile) async {
     if (connectedProfiles.contains(profile)) {
-// Disconnect the session
       connectedProfiles.remove(profile);
-      Get.snackbar('Connection Status', 'Disconnected successfully!',
-          snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
+      Get.snackbar(
+        "Connection Status",
+        "Disconnected from ${profile.name}!",
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 1),
+      );
     } else {
       try {
-        var session = await SessionManager.connect(profile);
+        await SessionManager.connect(profile);
         connectedProfiles.add(profile);
-        Get.snackbar('Connection Status', 'Connected successfully!',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: Duration(seconds: 1));
+        Get.snackbar(
+          "Connection Status",
+          "Connected to ${profile.name}!",
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 1),
+        );
       } catch (e) {
-        print('Failed to connect: $e');
-        Get.snackbar('Error', 'Failed to connect.',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: Duration(microseconds: 1));
+        Get.snackbar(
+          "Error",
+          "Failed to connect: $e",
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 1),
+        );
       }
     }
   }
@@ -103,20 +119,39 @@ class ProfileController extends GetxController {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: "Name"),
+                      validator: (value) {
+                        if (value!.isEmpty) return "Please enter a name";
+                        if (profiles.any((p) =>
+                            p.name == value && p.name != profile?.name)) {
+                          return "Name already exists. Choose a different name.";
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
                       controller: urlController,
-                      decoration: InputDecoration(labelText: 'URL'),
-                      validator: (value) =>
-                      value!.isEmpty ? 'Please enter a URL' : null,
+                      decoration: const InputDecoration(labelText: "URL"),
+                      validator: (value) {
+                        if (value!.isEmpty) return "Please enter a URL";
+                        if (!value.startsWith("ws://") &&
+                            !value.startsWith("wss://")) {
+                          return "URL must start with ws:// or wss://";
+                        }
+                        return null;
+                      },
                     ),
                     TextFormField(
                       controller: realmController,
-                      decoration: InputDecoration(labelText: 'Realm'),
+                      decoration: const InputDecoration(labelText: "Realm"),
                       validator: (value) =>
-                      value!.isEmpty ? 'Please enter a realm' : null,
+                          value!.isEmpty ? "Please enter a realm" : null,
                     ),
                     DropdownButtonFormField<String>(
                       value: selectedSerializer,
-                      decoration: InputDecoration(labelText: 'Serializer'),
+                      decoration:
+                          const InputDecoration(labelText: "Serializer"),
                       items: serializers.map((serializer) {
                         return DropdownMenuItem<String>(
                           value: serializer,
@@ -129,17 +164,23 @@ class ProfileController extends GetxController {
                         });
                       },
                       validator: (value) =>
-                      value == null ? 'Please select a serializer' : null,
+                          value == null ? "Please select a serializer" : null,
                     ),
                     TextFormField(
                       controller: authidController,
-                      decoration: InputDecoration(labelText: 'Auth ID'),
-                      validator: (value) =>
-                      value!.isEmpty ? 'Please enter an auth ID' : null,
+                      decoration: const InputDecoration(labelText: "Auth ID"),
+                      validator: (value) {
+                        if (selectedAuthMethod != "Anonymous" &&
+                            (value == null || value.isEmpty)) {
+                          return "Please enter an Auth ID";
+                        }
+                        return null;
+                      },
                     ),
                     DropdownButtonFormField<String>(
                       value: selectedAuthMethod,
-                      decoration: InputDecoration(labelText: 'Auth Method'),
+                      decoration:
+                          const InputDecoration(labelText: "Auth Method"),
                       items: authMethods.map((authMethod) {
                         return DropdownMenuItem<String>(
                           value: authMethod,
@@ -151,152 +192,46 @@ class ProfileController extends GetxController {
                           selectedAuthMethod = value!;
                         });
                       },
-                      validator: (value) => value == null
-                          ? 'Please select an authentication method'
-                          : null,
+                      validator: (value) =>
+                          value == null ? "Please select an auth method" : null,
                     ),
-                    if (selectedAuthMethod == 'Ticket')
+                    if (selectedAuthMethod != "Anonymous")
                       TextFormField(
                         controller: secretController,
-                        decoration: InputDecoration(labelText: 'Ticket'),
+                        decoration: const InputDecoration(labelText: "Secret"),
                         validator: (value) =>
-                        value!.isEmpty ? 'Please enter a ticket' : null,
+                            value!.isEmpty ? "Please enter a secret" : null,
                       ),
-                      SizedBox(height: 8),
-                      TextFormField(
-                        controller: secretController,
-                        decoration: InputDecoration(labelText: 'Secret'),
-                        validator: (value) =>
-                        value!.isEmpty ? 'Please enter a secret' : null,
-                      ),
-                      SizedBox(height: 8),
-                      TextFormField(
-                        controller: realmController,
-                        decoration: InputDecoration(labelText: "Realm"),
-                        validator: (value) =>
-                        value!.isEmpty ? 'PrivateKey required' : null,
-                      ),
-                      SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: selectedSerializer,
-                        decoration: InputDecoration(labelText: "Serializer"),
-                        items: serializers.map((serializer) {
-                          return DropdownMenuItem<String>(
-                            value: serializer,
-                            child: Text(serializer),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedSerializer = value!;
-                          });
-                        },
-                        validator: (value) =>
-                            value == null ? "Please select a serializer" : null,
-                      ),
-                      SizedBox(height: 8),
-                      TextFormField(
-                        controller: authidController,
-                        decoration: InputDecoration(labelText: "Auth ID"),
-                        validator: (value) {
-                          if (selectedAuthMethod != "Anonymous" &&
-                              (value == null || value.isEmpty)) {
-                            return "Please enter an Auth ID";
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: selectedAuthMethod,
-                        decoration:
-                            const InputDecoration(labelText: "Auth Method"),
-                        items: authMethods.map((authMethod) {
-                          return DropdownMenuItem<String>(
-                            value: authMethod,
-                            child: Text(authMethod),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedAuthMethod = value!;
-                          });
-                        },
-                        validator: (value) => value == null
-                            ? "Please select an authentication method"
-                            : null,
-                      ),
-                      if (selectedAuthMethod == "Ticket") SizedBox(height: 8),
-                      if (selectedAuthMethod == "Ticket")
-                        TextFormField(
-                          controller: secretController,
-                          decoration:
-                              const InputDecoration(labelText: "Ticket"),
-                          validator: (value) =>
-                              value!.isEmpty ? "Please enter a ticket" : null,
-                        ),
-                      if (selectedAuthMethod == "WAMP-CRA") SizedBox(height: 8),
-                      if (selectedAuthMethod == "WAMP-CRA")
-                        TextFormField(
-                          controller: secretController,
-                          decoration:
-                              const InputDecoration(labelText: "Secret"),
-                          validator: (value) =>
-                              value!.isEmpty ? "Please enter a secret" : null,
-                        ),
-                      if (selectedAuthMethod == "CryptoSign")
-                        SizedBox(height: 8),
-                      if (selectedAuthMethod == "CryptoSign")
-                        TextFormField(
-                          controller: secretController,
-                          decoration:
-                              const InputDecoration(labelText: "PrivateKey"),
-                          validator: (value) =>
-                              value!.isEmpty ? "PrivateKey required" : null,
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),
             actions: [
               TextButton(
                 onPressed: Get.back,
-                child: Text("Cancel"),
+                child: const Text("Cancel"),
               ),
               TextButton(
                 onPressed: () async {
                   if (formKey.currentState!.validate()) {
                     Get.back(); // Close the dialog first
-                    try {
-                      final newProfile = ProfileModel(
-                        name: nameController.text,
-                        url: urlController.text,
-                        realm: realmController.text,
-                        serializer: selectedSerializer,
-                        authid: authidController.text,
-                        authmethod: selectedAuthMethod,
-                        secret: secretController.text,
-                      );
-                      print(newProfile.secret);
-
-                      if (profile == null) {
-                        await addProfile(newProfile);
-                      } else {
-                        await updateProfile(newProfile);
-                      }
-                      Get.snackbar('Profile Saved',
-                          'Profile for ${newProfile.authid} saved successfully!',
-                          snackPosition: SnackPosition.BOTTOM,
-                          duration: Duration(seconds: 1));
-                    } catch (e) {
-                      Get.snackbar('Error', 'Failed to save profile: $e',
-                          snackPosition: SnackPosition.BOTTOM,
-                          duration: Duration(seconds: 1));
+                    final newProfile = ProfileModel(
+                      name: nameController.text,
+                      url: urlController.text,
+                      realm: realmController.text,
+                      serializer: selectedSerializer,
+                      authid: authidController.text,
+                      authmethod: selectedAuthMethod,
+                      secret: secretController.text,
+                    );
+                    if (profile == null) {
+                      await addProfile(newProfile);
+                    } else {
+                      await updateProfile(newProfile);
                     }
                   }
                 },
-                child: Text("Save"),
+                child: const Text("Save"),
               ),
             ],
           );

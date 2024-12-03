@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
-import 'profile_controller.dart';
+import "package:get/get.dart";
+import 'package:wick_ui/app/modules/profile/profile_controller.dart';
 
 class ProfileBinding extends Bindings {
   @override

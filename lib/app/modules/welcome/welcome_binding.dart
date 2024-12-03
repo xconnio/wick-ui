@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
-import 'welcome_controller.dart';
+import "package:get/get.dart";
+import 'package:wick_ui/app/modules/welcome/welcome_controller.dart';
 
 class WelcomeBinding extends Bindings {
   @override
