@@ -16,7 +16,7 @@ class ProfileController extends GetxController {
   }
 
   Future<void> saveProfiles() async {
-    await StorageManager.saveProfiles(profiles);
+    await StorageManager.saveProfiles(profiles.toList());
   }
 
   Future<void> loadProfiles() async {
@@ -31,10 +31,10 @@ class ProfileController extends GetxController {
         snackPosition: SnackPosition.BOTTOM, duration: Duration(seconds: 1));
   }
 
-  Future<void> updateProfile(ProfileModel profile) async {
-    int index = profiles.indexWhere((p) => p.authid == profile.authid);
+  Future<void> updateProfile(ProfileModel updatedProfile) async {
+    int index = profiles.indexWhere((p) => p.name == updatedProfile.name);
     if (index != -1) {
-      profiles[index] = profile;
+      profiles[index] = updatedProfile;
       await saveProfiles();
       Get.snackbar('Profile Updated',
           'Profile for ${profile.authid} updated successfully!',
@@ -75,13 +75,14 @@ class ProfileController extends GetxController {
 
   void createProfile({ProfileModel? profile}) {
     final formKey = GlobalKey<FormState>();
-    final urlController = TextEditingController(text: profile?.url ?? '');
-    final realmController = TextEditingController(text: profile?.realm ?? '');
-    final authidController = TextEditingController(text: profile?.authid ?? '');
-    final secretController = TextEditingController(text: profile?.secret ?? '');
+    final nameController = TextEditingController(text: profile?.name ?? "");
+    final urlController = TextEditingController(text: profile?.url ?? "");
+    final realmController = TextEditingController(text: profile?.realm ?? "");
+    final authidController = TextEditingController(text: profile?.authid ?? "");
+    final secretController = TextEditingController(text: profile?.secret ?? "");
 
-    final serializers = ['JSON', 'MsgPack', 'CBOR'];
-    final authMethods = ['Anonymous', 'Ticket', 'WAMP-CRA', 'CryptoSign'];
+    final serializers = ["JSON", "MsgPack", "CBOR"];
+    final authMethods = ["Anonymous", "Ticket", "WAMP-CRA", "CryptoSign"];
 
     var selectedSerializer = serializers.contains(profile?.serializer)
         ? profile?.serializer ?? serializers.first
@@ -94,9 +95,7 @@ class ProfileController extends GetxController {
       StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text(profile == null
-                ? 'Create WAMP Session'
-                : 'Update WAMP Session'),
+            title: Text(profile == null ? "Create Profile" : "Update Profile"),
             content: Form(
               key: formKey,
               child: SingleChildScrollView(
@@ -163,30 +162,107 @@ class ProfileController extends GetxController {
                         validator: (value) =>
                         value!.isEmpty ? 'Please enter a ticket' : null,
                       ),
-                    if (selectedAuthMethod == 'WAMP-CRA')
+                      SizedBox(height: 8),
                       TextFormField(
                         controller: secretController,
                         decoration: InputDecoration(labelText: 'Secret'),
                         validator: (value) =>
                         value!.isEmpty ? 'Please enter a secret' : null,
                       ),
-                    if (selectedAuthMethod == 'CryptoSign')
+                      SizedBox(height: 8),
                       TextFormField(
-                        controller: secretController,
-                        decoration: InputDecoration(labelText: 'PrivateKey'),
+                        controller: realmController,
+                        decoration: InputDecoration(labelText: "Realm"),
                         validator: (value) =>
                         value!.isEmpty ? 'PrivateKey required' : null,
                       ),
-                  ],
+                      SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: selectedSerializer,
+                        decoration: InputDecoration(labelText: "Serializer"),
+                        items: serializers.map((serializer) {
+                          return DropdownMenuItem<String>(
+                            value: serializer,
+                            child: Text(serializer),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedSerializer = value!;
+                          });
+                        },
+                        validator: (value) =>
+                            value == null ? "Please select a serializer" : null,
+                      ),
+                      SizedBox(height: 8),
+                      TextFormField(
+                        controller: authidController,
+                        decoration: InputDecoration(labelText: "Auth ID"),
+                        validator: (value) {
+                          if (selectedAuthMethod != "Anonymous" &&
+                              (value == null || value.isEmpty)) {
+                            return "Please enter an Auth ID";
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: selectedAuthMethod,
+                        decoration:
+                            const InputDecoration(labelText: "Auth Method"),
+                        items: authMethods.map((authMethod) {
+                          return DropdownMenuItem<String>(
+                            value: authMethod,
+                            child: Text(authMethod),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedAuthMethod = value!;
+                          });
+                        },
+                        validator: (value) => value == null
+                            ? "Please select an authentication method"
+                            : null,
+                      ),
+                      if (selectedAuthMethod == "Ticket") SizedBox(height: 8),
+                      if (selectedAuthMethod == "Ticket")
+                        TextFormField(
+                          controller: secretController,
+                          decoration:
+                              const InputDecoration(labelText: "Ticket"),
+                          validator: (value) =>
+                              value!.isEmpty ? "Please enter a ticket" : null,
+                        ),
+                      if (selectedAuthMethod == "WAMP-CRA") SizedBox(height: 8),
+                      if (selectedAuthMethod == "WAMP-CRA")
+                        TextFormField(
+                          controller: secretController,
+                          decoration:
+                              const InputDecoration(labelText: "Secret"),
+                          validator: (value) =>
+                              value!.isEmpty ? "Please enter a secret" : null,
+                        ),
+                      if (selectedAuthMethod == "CryptoSign")
+                        SizedBox(height: 8),
+                      if (selectedAuthMethod == "CryptoSign")
+                        TextFormField(
+                          controller: secretController,
+                          decoration:
+                              const InputDecoration(labelText: "PrivateKey"),
+                          validator: (value) =>
+                              value!.isEmpty ? "PrivateKey required" : null,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
             actions: [
               TextButton(
-                onPressed: () {
-                  Get.back();
-                },
-                child: Text('Cancel'),
+                onPressed: Get.back,
+                child: Text("Cancel"),
               ),
               TextButton(
                 onPressed: () async {
@@ -194,6 +270,7 @@ class ProfileController extends GetxController {
                     Get.back(); // Close the dialog first
                     try {
                       final newProfile = ProfileModel(
+                        name: nameController.text,
                         url: urlController.text,
                         realm: realmController.text,
                         serializer: selectedSerializer,
@@ -201,13 +278,13 @@ class ProfileController extends GetxController {
                         authmethod: selectedAuthMethod,
                         secret: secretController.text,
                       );
+                      print(newProfile.secret);
 
                       if (profile == null) {
                         await addProfile(newProfile);
                       } else {
                         await updateProfile(newProfile);
                       }
-
                       Get.snackbar('Profile Saved',
                           'Profile for ${newProfile.authid} saved successfully!',
                           snackPosition: SnackPosition.BOTTOM,
@@ -219,7 +296,7 @@ class ProfileController extends GetxController {
                     }
                   }
                 },
-                child: Text('Save'),
+                child: Text("Save"),
               ),
             ],
           );

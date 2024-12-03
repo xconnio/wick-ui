@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'profile_controller.dart';
+import "package:flutter/material.dart";
+import "package:get/get.dart";
+import "profile_controller.dart";
 
 class ProfileView extends StatelessWidget {
   final ProfileController controller = Get.find<ProfileController>();
@@ -8,7 +8,7 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Profiles')),
+      appBar: AppBar(title: Text("Profiles")),
       body: Obx(() {
         return ListView.builder(
           itemCount: controller.profiles.length,
@@ -16,15 +16,22 @@ class ProfileView extends StatelessWidget {
             final profile = controller.profiles[index];
 
             return ListTile(
-              title: Text(profile.realm),
+              title: Text(
+                profile.name,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('URL: ${profile.url}'),
-                  Text('Auth ID: ${profile.authid}'),
-                  Text('Auth Method: ${profile.authmethod}'),
-                  Text('Serializer: ${profile.serializer}'),
-                  Text('Secret: ${profile.secret}'),
+                  Text("Realm: ${profile.realm}"),
+                  Text("URL: ${profile.url}"),
+                  Text("Auth ID: ${profile.authid}"),
+                  Text("Auth Method: ${profile.authmethod}"),
+                  Text("Serializer: ${profile.serializer}"),
+                  Text("Secret: ${profile.secret}"),
                 ],
               ),
               isThreeLine: true,
@@ -56,8 +63,8 @@ class ProfileView extends StatelessWidget {
         );
       }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => controller.createProfile(),
-        child: Icon(Icons.add),
+        onPressed: controller.createProfile,
+        child: const Icon(Icons.add),
       ),
     );
   }
