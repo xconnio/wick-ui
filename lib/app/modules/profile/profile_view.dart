@@ -1,14 +1,17 @@
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/modules/profile/profile_controller.dart";
 
 class ProfileView extends StatelessWidget {
+  ProfileView({super.key});
+
   final ProfileController controller = Get.find<ProfileController>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Profiles")),
+      appBar: AppBar(title: const Text("Profiles")),
       body: Obx(() {
         return ListView.builder(
           itemCount: controller.profiles.length,
@@ -18,7 +21,7 @@ class ProfileView extends StatelessWidget {
             return ListTile(
               title: Text(
                 profile.name,
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
@@ -36,24 +39,23 @@ class ProfileView extends StatelessWidget {
               ),
               isThreeLine: true,
               trailing: Obx(() {
-                bool isConnected =
-                controller.connectedProfiles.contains(profile);
+                bool isConnected = controller.connectedProfiles.contains(profile);
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.edit),
-                      onPressed: () {
-                        controller.createProfile(profile: profile);
+                      icon: const Icon(Icons.edit),
+                      onPressed: () async {
+                        await controller.createProfile(profile: profile);
                       },
                     ),
                     IconButton(
                       icon: Icon(isConnected ? Icons.stop : Icons.play_arrow),
-                      onPressed: () => controller.toggleConnection(profile),
+                      onPressed: () async => controller.toggleConnection(profile),
                     ),
                     IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () => controller.deleteProfile(profile),
+                      icon: const Icon(Icons.delete),
+                      onPressed: () async => controller.deleteProfile(profile),
                     ),
                   ],
                 );
@@ -67,5 +69,11 @@ class ProfileView extends StatelessWidget {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ProfileController>("controller", controller));
   }
 }
