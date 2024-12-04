@@ -1,7 +1,8 @@
+import "package:wick_ui/app/data/models/profile_model.dart";
 import "package:xconn/xconn.dart";
 
 mixin SessionManager {
-  static Future<Session> connect(profile) async {
+  static Future<Session> connect(ProfileModel profile) async {
     var serializer = _getSerializer(profile.serializer);
 
     Client client;

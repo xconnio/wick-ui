@@ -1,20 +1,20 @@
 import "package:get/get.dart";
-import "package:wick_ui/app/modules/welcome/welcome_binding.dart";
-import "package:wick_ui/app/modules/welcome/welcome_view.dart";
 import "package:wick_ui/app/modules/profile/profile_binding.dart";
 import "package:wick_ui/app/modules/profile/profile_view.dart";
+import "package:wick_ui/app/modules/welcome/welcome_binding.dart";
+import "package:wick_ui/app/modules/welcome/welcome_view.dart";
 import "package:wick_ui/app/routes/app_routes.dart";
 
-class AppPages {
-  static final routes = [
+mixin AppPages {
+  static List<GetPage> get routes => [
     GetPage(
-      name: AppRoutes.WELCOME,
-      page: () => WelcomeView(),
+      name: AppRoutes.welcome,
+      page: WelcomeView.new,
       binding: WelcomeBinding(),
     ),
     GetPage(
-      name: AppRoutes.PROFILE,
-      page: () => ProfileView(),
+      name: AppRoutes.profile,
+      page: ProfileView.new,
       binding: ProfileBinding(),
     ),
   ];

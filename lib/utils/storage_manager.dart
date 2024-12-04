@@ -1,9 +1,10 @@
 import "dart:convert";
 import "dart:io";
+
 import "package:flutter/foundation.dart" show kIsWeb;
+import "package:ini/ini.dart";
 import "package:path_provider/path_provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
-import "package:ini/ini.dart";
 import "package:wick_ui/app/data/models/profile_model.dart";
 
 mixin StorageManager {
@@ -20,7 +21,7 @@ mixin StorageManager {
       var config = Config();
 
       // Add each profile to the .ini file
-      for (var profile in profiles) {
+      for (final profile in profiles) {
         var section = profile.name;
         config..addSection(section)
         ..set(section, "name", profile.name)
@@ -52,7 +53,7 @@ mixin StorageManager {
       // For mobile/desktop: load profiles from an .ini file
       final directory = await getApplicationDocumentsDirectory();
       final file = File("${directory.path}/profiles.ini");
-      if (await file.exists()) {
+      if (file.existsSync()) {
         var config = Config.fromStrings(await file.readAsLines());
         return config.sections().map((section) {
           return ProfileModel(

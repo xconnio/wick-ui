@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/profile_model.dart";
@@ -5,13 +7,14 @@ import "package:wick_ui/utils/session_manager.dart";
 import "package:wick_ui/utils/storage_manager.dart";
 
 class ProfileController extends GetxController {
-  var profiles = <ProfileModel>[].obs;
-  var connectedProfiles = <ProfileModel>[].obs; // List of connected profiles
+  RxList<ProfileModel> profiles = <ProfileModel>[].obs;
+  RxList<ProfileModel> connectedProfiles =
+      <ProfileModel>[].obs; // List of connected profiles
 
   @override
-  void onInit() {
+  Future<void> onInit() async {
     super.onInit();
-    loadProfiles();
+    await loadProfiles();
   }
 
   Future<void> saveProfiles() async {
@@ -59,8 +62,9 @@ class ProfileController extends GetxController {
     );
   }
 
-  void toggleConnection(ProfileModel profile) async {
+  Future<void> toggleConnection(ProfileModel profile) async {
     if (connectedProfiles.contains(profile)) {
+      // Disconnect logic
       connectedProfiles.remove(profile);
       Get.snackbar(
         "Connection Status",
@@ -69,6 +73,7 @@ class ProfileController extends GetxController {
         duration: const Duration(seconds: 1),
       );
     } else {
+      // Try connecting
       try {
         await SessionManager.connect(profile);
         connectedProfiles.add(profile);
@@ -78,18 +83,27 @@ class ProfileController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
           duration: const Duration(seconds: 1),
         );
-      } catch (e) {
+      } on TimeoutException catch (e) {
+        // Handle specific timeout exception
+        Get.snackbar(
+          "Error",
+          "Connection timed out: ${e.message}",
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      } on Exception catch (e) {
+        // Fallback for any other type of exception
         Get.snackbar(
           "Error",
           "Failed to connect: $e",
           snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 1),
+          duration: const Duration(seconds: 2),
         );
       }
     }
   }
 
-  void createProfile({ProfileModel? profile}) {
+  Future<void> createProfile({ProfileModel? profile}) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: profile?.name ?? "");
     final urlController = TextEditingController(text: profile?.url ?? "");
@@ -107,7 +121,7 @@ class ProfileController extends GetxController {
         ? profile?.authmethod ?? authMethods.first
         : authMethods.first;
 
-    Get.dialog(
+    await Get.dialog(
       StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
@@ -122,9 +136,11 @@ class ProfileController extends GetxController {
                       controller: nameController,
                       decoration: const InputDecoration(labelText: "Name"),
                       validator: (value) {
-                        if (value!.isEmpty) return "Please enter a name";
+                        if (value!.isEmpty) {
+                          return "Please enter a name";
+                        }
                         if (profiles.any((p) =>
-                            p.name == value && p.name != profile?.name)) {
+                            p.name == value && p.name != profile?.name,)) {
                           return "Name already exists. Choose a different name.";
                         }
                         return null;
@@ -134,7 +150,9 @@ class ProfileController extends GetxController {
                       controller: urlController,
                       decoration: const InputDecoration(labelText: "URL"),
                       validator: (value) {
-                        if (value!.isEmpty) return "Please enter a URL";
+                        if (value!.isEmpty) {
+                          return "Please enter a URL";
+                        }
                         if (!value.startsWith("ws://") &&
                             !value.startsWith("wss://")) {
                           return "URL must start with ws:// or wss://";
