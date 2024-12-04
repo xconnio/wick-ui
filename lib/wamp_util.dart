@@ -15,37 +15,37 @@ Serializer _getSerializer(String? serializerString) {
 }
 
 Future<Session> connect(
-    String url,
-    String realm,
-    String serializerStr, {
-      String? authid,
-      String? authrole,
-      String? ticket,
-      String? secret,
-      String? privateKey,
-    }) async {
+  String url,
+  String realm,
+  String serializerStr, {
+  String? authid,
+  String? authrole,
+  String? ticket,
+  String? secret,
+  String? privateKey,
+}) async {
   var serializer = _getSerializer(serializerStr);
   Client client;
 
   if (ticket != null) {
     client = Client(
-        serializer: serializer,
-        authenticator: TicketAuthenticator(authid ?? "", {}, ticket),
+      serializer: serializer,
+      authenticator: TicketAuthenticator(authid ?? "", {}, ticket),
     );
   } else if (secret != null) {
     client = Client(
-        serializer: serializer,
-        authenticator: WAMPCRAAuthenticator(authid ?? "", {}, secret),
+      serializer: serializer,
+      authenticator: WAMPCRAAuthenticator(authid ?? "", {}, secret),
     );
   } else if (privateKey != null) {
     client = Client(
-        serializer: serializer,
-        authenticator: CryptoSignAuthenticator(authid ?? "", {}, privateKey),
+      serializer: serializer,
+      authenticator: CryptoSignAuthenticator(authid ?? "", {}, privateKey),
     );
   } else if (authid != null) {
     client = Client(
-        serializer: serializer,
-        authenticator: AnonymousAuthenticator(authid),
+      serializer: serializer,
+      authenticator: AnonymousAuthenticator(authid),
     );
   } else {
     client = Client(serializer: serializer);

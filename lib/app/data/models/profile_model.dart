@@ -1,5 +1,4 @@
 class ProfileModel {
-
   ProfileModel({
     required this.name,
     required this.url,
