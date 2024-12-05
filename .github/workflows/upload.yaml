@@ -3,7 +3,7 @@ name: Deploy web on S3
 on:
   push:
     branches:
-      - v2
+      - main
 
 jobs:
   build:
