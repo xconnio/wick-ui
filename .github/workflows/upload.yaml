@@ -3,7 +3,7 @@ name: Deploy web on S3
 on:
   push:
     branches:
-      - main
+      - v2
 
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.22.1
+          flutter-version: 3.24.5
 
       - name: Install dependencies
         run: make install
