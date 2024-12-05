@@ -9,6 +9,12 @@ grade: stable
 confinement: strict
 compression: lzo
 
+plugs:
+  dot-wick:
+    interface: personal-files
+    write:
+      - $HOME/.wick
+
 apps:
   wick-desktop:
     command: wick-desktop
@@ -17,6 +23,8 @@ apps:
     plugs:
       - network
       - network-bind
+      - home
+      - dot-wick
 
 parts:
   wick-desktop:

@@ -4,6 +4,11 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+android {
+    ndkVersion = "27.0.12077973"
+}
+
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
