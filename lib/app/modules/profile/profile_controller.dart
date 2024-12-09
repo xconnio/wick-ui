@@ -115,7 +115,8 @@ class ProfileController extends GetxController {
               title: Text(profile == null ? "Create Profile" : "Update Profile"),
               content: Form(
                 key: formKey,
-                child: SingleChildScrollView(
+                child: SizedBox(
+                  width: 300,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
