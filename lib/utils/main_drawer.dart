@@ -13,7 +13,7 @@ class MainDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: isSidebar ? 250 : null,
-      color: isSidebar ? Colors.white: null,
+      color: isSidebar ? Colors.white : null,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
