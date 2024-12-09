@@ -34,7 +34,6 @@ class ProfileView extends StatelessWidget {
                   Text("Auth ID: ${profile.authid}"),
                   Text("Auth Method: ${profile.authmethod}"),
                   Text("Serializer: ${profile.serializer}"),
-                  Text("Secret: ${profile.secret}"),
                 ],
               ),
               isThreeLine: true,

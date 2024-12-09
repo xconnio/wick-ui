@@ -10,8 +10,7 @@ import "package:wick_ui/app/data/models/profile_model.dart";
 mixin StorageManager {
   static Future<String> _getConfigFilePath() async {
     if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-      final homeDir =
-          Platform.environment["HOME"] ?? Platform.environment["USERPROFILE"];
+      final homeDir = Platform.environment["HOME"] ?? Platform.environment["USERPROFILE"];
       if (homeDir == null) {
         throw Exception("Unable to determine home directory");
       }
@@ -66,9 +65,7 @@ mixin StorageManager {
       final profilesString = prefs.getString("profiles");
       if (profilesString != null) {
         final profilesJson = jsonDecode(profilesString) as List;
-        return profilesJson
-            .map((profileJson) => ProfileModel.fromJson(profileJson))
-            .toList();
+        return profilesJson.map((profileJson) => ProfileModel.fromJson(profileJson)).toList();
       }
     } else {
       final filePath = await _getConfigFilePath();
