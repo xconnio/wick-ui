@@ -2,6 +2,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/modules/profile/profile_controller.dart";
+import "package:wick_ui/utils/responsive_scaffold.dart";
 
 class ProfileView extends StatelessWidget {
   ProfileView({super.key});
@@ -10,8 +11,7 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Profiles")),
+    return ResponsiveScaffold(
       body: Obx(() {
         return ListView.builder(
           itemCount: controller.profiles.length,

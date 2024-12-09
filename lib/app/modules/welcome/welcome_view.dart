@@ -1,9 +1,9 @@
-import "dart:async";
-
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/modules/welcome/welcome_controller.dart";
+
+import "package:wick_ui/utils/responsive_scaffold.dart";
 
 class WelcomeView extends StatelessWidget {
   WelcomeView({super.key});
@@ -12,8 +12,8 @@ class WelcomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    unawaited(controller.navigateToProfile());
-    return const Scaffold(
+    // unawaited(controller.navigateToProfile());
+    return const ResponsiveScaffold(
       body: Center(
         child: Text("Welcome"),
       ),
