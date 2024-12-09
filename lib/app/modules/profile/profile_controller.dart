@@ -118,6 +118,7 @@ class ProfileController extends GetxController {
                 key: formKey,
                 child: SizedBox(
                   width: 300,
+                  height: 400,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
