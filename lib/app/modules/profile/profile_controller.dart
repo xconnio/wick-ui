@@ -98,6 +98,7 @@ class ProfileController extends GetxController {
     final realmController = TextEditingController(text: profile?.realm ?? "");
     final authidController = TextEditingController(text: profile?.authid ?? "");
     final secretController = TextEditingController(text: profile?.secret ?? "");
+    bool isSecretHidden = true;
 
     final serializers = ["JSON", "MsgPack", "CBOR"];
     final authMethods = ["Anonymous", "Ticket", "WAMP-CRA", "CryptoSign"];
@@ -198,7 +199,21 @@ class ProfileController extends GetxController {
                       if (selectedAuthMethod != "Anonymous")
                         TextFormField(
                           controller: secretController,
-                          decoration: const InputDecoration(labelText: "Secret"),
+                          obscureText: isSecretHidden,
+                          // Hide the secret by default
+                          decoration: InputDecoration(
+                            labelText: "Secret",
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                isSecretHidden ? Icons.visibility : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  isSecretHidden = !isSecretHidden;
+                                });
+                              },
+                            ),
+                          ),
                           validator: (value) => value!.isEmpty ? "Please enter a secret" : null,
                         ),
                     ],
