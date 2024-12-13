@@ -2,6 +2,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/modules/profile/profile_controller.dart";
+import "package:wick_ui/config/theme/dark_theme_colors.dart";
 import "package:wick_ui/utils/responsive_scaffold.dart";
 
 class ProfileView extends StatelessWidget {
@@ -64,8 +65,9 @@ class ProfileView extends StatelessWidget {
         );
       }),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: DarkThemeColors.primaryColor,
         onPressed: controller.createProfile,
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: DarkThemeColors.onPrimaryColor),
       ),
     );
   }
