@@ -1,7 +1,6 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
-
 import "package:wick_ui/app/routes/app_routes.dart";
 
 class MainDrawer extends StatelessWidget {
@@ -11,7 +10,7 @@ class MainDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: isSidebar ? 250 : null,
       child: ListView(
         padding: EdgeInsets.zero,
@@ -21,6 +20,13 @@ class MainDrawer extends StatelessWidget {
             title: const Text("Profile"),
             onTap: () async {
               await Get.toNamed(AppRoutes.profile);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_tree),
+            title: const Text("Action"),
+            onTap: () async {
+              await Get.toNamed(AppRoutes.action);
             },
           ),
         ],
