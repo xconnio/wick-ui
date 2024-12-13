@@ -3,16 +3,14 @@ import "package:wick_ui/app/modules/action/action_binding.dart";
 import "package:wick_ui/app/modules/action/action_view.dart";
 import "package:wick_ui/app/modules/profile/profile_binding.dart";
 import "package:wick_ui/app/modules/profile/profile_view.dart";
-import "package:wick_ui/app/modules/welcome/welcome_binding.dart";
-import "package:wick_ui/app/modules/welcome/welcome_view.dart";
 import "package:wick_ui/app/routes/app_routes.dart";
 
 mixin AppPages {
   static final routes = [
     GetPage(
-      name: AppRoutes.welcome,
-      page: WelcomeView.new,
-      binding: WelcomeBinding(),
+      name: AppRoutes.action,
+      page: ActionView.new,
+      binding: ActionBinding(),
     ),
     GetPage(
       name: AppRoutes.profile,

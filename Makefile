@@ -14,7 +14,7 @@ format:
 	dart format --line-length 120 .
 
 build-apk:
-	flutter build apk
+	flutter build apk --no-tree-shake-icons
 
 tests:
 	flutter test
