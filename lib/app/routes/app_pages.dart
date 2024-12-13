@@ -1,4 +1,6 @@
 import "package:get/get.dart";
+import "package:wick_ui/app/modules/action/action_binding.dart";
+import "package:wick_ui/app/modules/action/action_view.dart";
 import "package:wick_ui/app/modules/profile/profile_binding.dart";
 import "package:wick_ui/app/modules/profile/profile_view.dart";
 import "package:wick_ui/app/modules/welcome/welcome_binding.dart";

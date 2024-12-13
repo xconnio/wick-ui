@@ -13,17 +13,9 @@ class MainDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: isSidebar ? 250 : null,
-      color: isSidebar ? Colors.white : null,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text("Welcome"),
-            onTap: () async {
-              await Get.toNamed(AppRoutes.welcome);
-            },
-          ),
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text("Profile"),

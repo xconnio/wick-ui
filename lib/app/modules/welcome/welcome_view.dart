@@ -23,6 +23,7 @@ class WelcomeView extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<WelcomeController>("controller", controller));
+    properties
+        .add(DiagnosticsProperty<WelcomeController>("controller", controller));
   }
 }
