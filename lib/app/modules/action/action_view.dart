@@ -40,7 +40,6 @@ class ActionView extends StatelessWidget {
             const SizedBox(height: 8),
             _buildLogsWindow(),
             const SizedBox(height: 8),
-
             Expanded(
               child: DecoratedBox(
                 decoration: BoxDecoration(
