@@ -425,11 +425,12 @@ class ActionView extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ActionController>("actionController", actionController))
-    ..add(DiagnosticsProperty<ProfileController>("profileController", profileController))
-    ..add(DiagnosticsProperty<ArgsController>("argsController", argsController))
-    ..add(DiagnosticsProperty<TextEditingController>("uriController", uriController))
-    ..add(DiagnosticsProperty<KwargsController>("kwargsController", kwargsController))
-    ..add(IterableProperty<String>("wampMethods", wampMethods));
+    properties
+      ..add(DiagnosticsProperty<ActionController>("actionController", actionController))
+      ..add(DiagnosticsProperty<ProfileController>("profileController", profileController))
+      ..add(DiagnosticsProperty<ArgsController>("argsController", argsController))
+      ..add(DiagnosticsProperty<TextEditingController>("uriController", uriController))
+      ..add(DiagnosticsProperty<KwargsController>("kwargsController", kwargsController))
+      ..add(IterableProperty<String>("wampMethods", wampMethods));
   }
 }
