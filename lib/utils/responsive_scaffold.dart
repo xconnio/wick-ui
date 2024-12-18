@@ -18,13 +18,16 @@ class ResponsiveScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isDesktopOrWeb = kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+    final bool isDesktopOrWeb = kIsWeb ||
+        Platform.isWindows ||
+        Platform.isMacOS ||
+        Platform.isLinux;
 
     final bool shouldStickDrawer = isDesktopOrWeb && screenWidth >= 800;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Wick"),
+        title: Text(title ?? "Wick"),
       ),
       body: Row(
         children: [

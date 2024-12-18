@@ -1,3 +1,5 @@
+import "dart:io";
+
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
@@ -67,6 +69,8 @@ class ActionView extends StatelessWidget {
   }
 
   Widget _buildUriBar() {
+    final bool isMobile = Platform.isAndroid || Platform.isIOS;
+
     return Form(
       key: _formKey,
       child: Container(
@@ -75,85 +79,205 @@ class ActionView extends StatelessWidget {
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Obx(() {
-                return DropdownButtonFormField<ProfileModel>(
-                  isExpanded: true,
-                  hint: const Text("Select Profile"),
-                  value: actionController.selectedProfile.value,
-                  onChanged: (ProfileModel? newValue) async {
-                    await actionController.setSelectedProfile(newValue!);
-                  },
-                  validator: (value) => value == null ? "Please select a profile." : null,
-                  items: profileController.profiles.map((ProfileModel profile) {
-                    return DropdownMenuItem<ProfileModel>(
-                      value: profile,
-                      child: Text(profile.name),
-                    );
-                  }).toList(),
-                );
-              }),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 4,
-              child: TextFormField(
-                controller: uriController,
-                decoration: const InputDecoration(
-                  labelText: "URI",
-                  border: InputBorder.none,
-                ),
-                validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: Obx(() {
-                return WampMethodButton(
-                  selectedMethod: actionController.selectedWampMethod.value.isNotEmpty
-                      ? actionController.selectedWampMethod.value
-                      : "Call",
-                  methods: wampMethods,
-                  onMethodChanged: (String? newValue) {
-                    actionController.selectedWampMethod.value = newValue!;
-                  },
-                  onMethodCalled: () async {
-                    // Trigger validation
-                    if (_formKey.currentState?.validate() ?? false) {
-                      List<String> args = argsController.controllers.map((controller) => controller.text).toList();
-                      Map<String, String> kwArgs = {
-                        for (final entry in kwargsController.tableData) entry.key: entry.value,
-                      };
-
-                      await actionController
-                          .performAction(
-                        actionController.selectedWampMethod.value.isNotEmpty
-                            ? actionController.selectedWampMethod.value
-                            : "Call",
-                        uriController.text,
-                        args,
-                        kwArgs,
-                      )
-                          .then((_) async {
-                        // Scroll to the bottom after the action is performed
-                        if (_scrollController.hasClients) {
-                          await _scrollController.animateTo(
-                            _scrollController.position.maxScrollExtent,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOut,
+        child: Column(
+          children: isMobile
+              ? [
+                  // First row: URI
+                  TextFormField(
+                    controller: uriController,
+                    decoration: const InputDecoration(
+                      labelText: "URI",
+                      border: InputBorder.none,
+                    ),
+                    validator: (value) => value == null || value.isEmpty
+                        ? "URI cannot be empty."
+                        : null,
+                  ),
+                  const SizedBox(height: 8),
+                  // Second row: Profile and WAMP Method
+                  Row(
+                    children: [
+                      // Profile Dropdown
+                      Expanded(
+                        flex: 2,
+                        child: Obx(() {
+                          return DropdownButtonFormField<ProfileModel>(
+                            isExpanded: true,
+                            hint: const Text("Select Profile"),
+                            value: actionController.selectedProfile.value,
+                            onChanged: (ProfileModel? newValue) async {
+                              await actionController
+                                  .setSelectedProfile(newValue!);
+                            },
+                            validator: (value) => value == null
+                                ? "Please select a profile."
+                                : null,
+                            items: profileController.profiles
+                                .map((ProfileModel profile) {
+                              return DropdownMenuItem<ProfileModel>(
+                                value: profile,
+                                child: Text(profile.name),
+                              );
+                            }).toList(),
                           );
-                        }
-                      });
-                    }
-                  },
-                );
-              }),
-            ),
-          ],
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      // WAMP Method Dropdown and Button
+                      Expanded(
+                        flex: 2,
+                        child: Obx(() {
+                          return WampMethodButton(
+                            selectedMethod: actionController
+                                    .selectedWampMethod.value.isNotEmpty
+                                ? actionController.selectedWampMethod.value
+                                : "Call",
+                            methods: wampMethods,
+                            onMethodChanged: (String? newValue) {
+                              actionController.selectedWampMethod.value =
+                                  newValue!;
+                            },
+                            onMethodCalled: () async {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                List<String> args = argsController.controllers
+                                    .map((controller) => controller.text)
+                                    .toList();
+                                Map<String, String> kwArgs = {
+                                  for (final entry
+                                      in kwargsController.tableData)
+                                    entry.key: entry.value,
+                                };
+
+                                await actionController
+                                    .performAction(
+                                  actionController
+                                          .selectedWampMethod.value.isNotEmpty
+                                      ? actionController
+                                          .selectedWampMethod.value
+                                      : "Call",
+                                  uriController.text,
+                                  args,
+                                  kwArgs,
+                                )
+                                    .then((_) async {
+                                  if (_scrollController.hasClients) {
+                                    await _scrollController.animateTo(
+                                      _scrollController
+                                          .position.maxScrollExtent,
+                                      duration:
+                                          const Duration(milliseconds: 300),
+                                      curve: Curves.easeOut,
+                                    );
+                                  }
+                                });
+                              }
+                            },
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ]
+              : [
+                  // Desktop and Web Layout: Single Row
+                  Row(
+                    children: [
+                      // Profile Dropdown
+                      Expanded(
+                        flex: 2,
+                        child: Obx(() {
+                          return DropdownButtonFormField<ProfileModel>(
+                            isExpanded: true,
+                            hint: const Text("Select Profile"),
+                            value: actionController.selectedProfile.value,
+                            onChanged: (ProfileModel? newValue) async {
+                              await actionController
+                                  .setSelectedProfile(newValue!);
+                            },
+                            validator: (value) => value == null
+                                ? "Please select a profile."
+                                : null,
+                            items: profileController.profiles
+                                .map((ProfileModel profile) {
+                              return DropdownMenuItem<ProfileModel>(
+                                value: profile,
+                                child: Text(profile.name),
+                              );
+                            }).toList(),
+                          );
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      // URI Input Field
+                      Expanded(
+                        flex: 4,
+                        child: TextFormField(
+                          controller: uriController,
+                          decoration: const InputDecoration(
+                            labelText: "URI",
+                            border: InputBorder.none,
+                          ),
+                          validator: (value) => value == null || value.isEmpty
+                              ? "URI cannot be empty."
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // WAMP Method Dropdown and Button
+                      Expanded(
+                        flex: 2,
+                        child: Obx(() {
+                          return WampMethodButton(
+                            selectedMethod: actionController
+                                    .selectedWampMethod.value.isNotEmpty
+                                ? actionController.selectedWampMethod.value
+                                : "Call",
+                            methods: wampMethods,
+                            onMethodChanged: (String? newValue) {
+                              actionController.selectedWampMethod.value =
+                                  newValue!;
+                            },
+                            onMethodCalled: () async {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                List<String> args = argsController.controllers
+                                    .map((controller) => controller.text)
+                                    .toList();
+                                Map<String, String> kwArgs = {
+                                  for (final entry
+                                      in kwargsController.tableData)
+                                    entry.key: entry.value,
+                                };
+
+                                await actionController
+                                    .performAction(
+                                  actionController
+                                          .selectedWampMethod.value.isNotEmpty
+                                      ? actionController
+                                          .selectedWampMethod.value
+                                      : "Call",
+                                  uriController.text,
+                                  args,
+                                  kwArgs,
+                                )
+                                    .then((_) async {
+                                  if (_scrollController.hasClients) {
+                                    await _scrollController.animateTo(
+                                      _scrollController
+                                          .position.maxScrollExtent,
+                                      duration:
+                                          const Duration(milliseconds: 300),
+                                      curve: Curves.easeOut,
+                                    );
+                                  }
+                                });
+                              }
+                            },
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ],
         ),
       ),
     );
@@ -161,45 +285,48 @@ class ActionView extends StatelessWidget {
 
   Widget _buildArgsTab() {
     return Obx(() {
-      return Container(
-        padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey),
-          ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Args"),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: argsController.addController,
-                ),
-              ],
+      return SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Colors.grey),
             ),
-            for (int i = 0; i < argsController.controllers.length; i++)
+          ),
+          child: Column(
+            children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: argsController.controllers[i],
-                      decoration: InputDecoration(
-                        labelText: "Args ${i + 1}",
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  // SizedBox(height: 8,);
+                  const Text("Args"),
                   IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: argsController.controllers.length > 1 ? () => argsController.removeController(i) : null,
+                    icon: const Icon(Icons.add),
+                    onPressed: argsController.addController,
                   ),
                 ],
               ),
-          ],
+              for (int i = 0; i < argsController.controllers.length; i++)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: argsController.controllers[i],
+                        decoration: InputDecoration(
+                          labelText: "Args ${i + 1}",
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: argsController.controllers.length > 1
+                          ? () => argsController.removeController(i)
+                          : null,
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       );
     });
@@ -207,72 +334,74 @@ class ActionView extends StatelessWidget {
 
   Widget _buildKwargsTab() {
     return Obx(() {
-      return Container(
-        padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey),
-          ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Kwargs"),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    kwargsController.addRow(const MapEntry("", ""));
-                  },
-                ),
-              ],
+      return SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Colors.grey),
             ),
-            for (int i = 0; i < kwargsController.tableData.length; i++)
+          ),
+          child: Column(
+            children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      decoration: InputDecoration(
-                        labelText: "Key ${i + 1}",
-                        border: const OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        final updatedEntry = MapEntry(
-                          value,
-                          kwargsController.tableData[i].value,
-                        );
-                        kwargsController.updateRow(i, updatedEntry);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      decoration: InputDecoration(
-                        labelText: "Value ${i + 1}",
-                        border: const OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        final updatedEntry = MapEntry(
-                          kwargsController.tableData[i].key,
-                          value,
-                        );
-                        kwargsController.updateRow(i, updatedEntry);
-                      },
-                    ),
-                  ),
+                  const Text("Kwargs"),
                   IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: kwargsController.tableData.length > 1
-                        ? () => kwargsController.removeRow(i)
-                        : null, // Disable if only one row is left
+                    icon: const Icon(Icons.add),
+                    onPressed: () {
+                      kwargsController.addRow(const MapEntry("", ""));
+                    },
                   ),
                 ],
               ),
-          ],
+              for (int i = 0; i < kwargsController.tableData.length; i++)
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: "Key ${i + 1}",
+                          border: const OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          final updatedEntry = MapEntry(
+                            value,
+                            kwargsController.tableData[i].value,
+                          );
+                          kwargsController.updateRow(i, updatedEntry);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 3,
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: "Value ${i + 1}",
+                          border: const OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          final updatedEntry = MapEntry(
+                            kwargsController.tableData[i].key,
+                            value,
+                          );
+                          kwargsController.updateRow(i, updatedEntry);
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: kwargsController.tableData.length > 1
+                          ? () => kwargsController.removeRow(i)
+                          : null,
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       );
     });
