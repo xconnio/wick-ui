@@ -48,8 +48,7 @@ class ProfileView extends StatelessWidget {
                     ),
                     isThreeLine: true,
                     trailing: Obx(() {
-                      bool isConnected =
-                          controller.connectedProfiles.contains(profile);
+                      bool isConnected = controller.connectedProfiles.contains(profile);
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -60,15 +59,12 @@ class ProfileView extends StatelessWidget {
                             },
                           ),
                           IconButton(
-                            icon: Icon(
-                                isConnected ? Icons.stop : Icons.play_arrow),
-                            onPressed: () async =>
-                                controller.toggleConnection(profile),
+                            icon: Icon(isConnected ? Icons.stop : Icons.play_arrow),
+                            onPressed: () async => controller.toggleConnection(profile),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
-                            onPressed: () async =>
-                                controller.deleteProfile(profile),
+                            onPressed: () async => controller.deleteProfile(profile),
                           ),
                         ],
                       );
@@ -88,7 +84,6 @@ class ProfileView extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties
-        .add(DiagnosticsProperty<ProfileController>("controller", controller));
+    properties.add(DiagnosticsProperty<ProfileController>("controller", controller));
   }
 }

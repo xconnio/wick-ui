@@ -78,9 +78,8 @@ class ActionView extends StatelessWidget {
   }
 
   Widget _buildUriBar() {
-    final bool isMobile = !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
+    final bool isMobile =
+        !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
 
     return Form(
       key: _formKey,
@@ -100,9 +99,7 @@ class ActionView extends StatelessWidget {
                       labelText: "URI",
                       border: InputBorder.none,
                     ),
-                    validator: (value) => value == null || value.isEmpty
-                        ? "URI cannot be empty."
-                        : null,
+                    validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
                   ),
                   const SizedBox(height: 8),
                   // Profile and WAMP Method Row
@@ -116,14 +113,10 @@ class ActionView extends StatelessWidget {
                             hint: const Text("Select Profile"),
                             value: actionController.selectedProfile.value,
                             onChanged: (ProfileModel? newValue) async {
-                              await actionController
-                                  .setSelectedProfile(newValue!);
+                              await actionController.setSelectedProfile(newValue!);
                             },
-                            validator: (value) => value == null
-                                ? "Please select a profile."
-                                : null,
-                            items: profileController.profiles
-                                .map((ProfileModel profile) {
+                            validator: (value) => value == null ? "Please select a profile." : null,
+                            items: profileController.profiles.map((ProfileModel profile) {
                               return DropdownMenuItem<ProfileModel>(
                                 value: profile,
                                 child: Text(profile.name),
@@ -138,32 +131,25 @@ class ActionView extends StatelessWidget {
                         flex: 2,
                         child: Obx(() {
                           return WampMethodButton(
-                            selectedMethod: actionController
-                                    .selectedWampMethod.value.isNotEmpty
+                            selectedMethod: actionController.selectedWampMethod.value.isNotEmpty
                                 ? actionController.selectedWampMethod.value
                                 : "Call",
                             methods: wampMethods,
                             onMethodChanged: (String? newValue) {
-                              actionController.selectedWampMethod.value =
-                                  newValue!;
+                              actionController.selectedWampMethod.value = newValue!;
                             },
                             onMethodCalled: () async {
                               if (_formKey.currentState?.validate() ?? false) {
-                                List<String> args = argsController.controllers
-                                    .map((controller) => controller.text)
-                                    .toList();
+                                List<String> args =
+                                    argsController.controllers.map((controller) => controller.text).toList();
                                 Map<String, String> kwArgs = {
-                                  for (final entry
-                                      in kwargsController.tableData)
-                                    entry.key: entry.value,
+                                  for (final entry in kwargsController.tableData) entry.key: entry.value,
                                 };
 
                                 await actionController
                                     .performAction(
-                                  actionController
-                                          .selectedWampMethod.value.isNotEmpty
-                                      ? actionController
-                                          .selectedWampMethod.value
+                                  actionController.selectedWampMethod.value.isNotEmpty
+                                      ? actionController.selectedWampMethod.value
                                       : "Call",
                                   uriController.text,
                                   args,
@@ -172,10 +158,8 @@ class ActionView extends StatelessWidget {
                                     .then((_) async {
                                   if (_scrollController.hasClients) {
                                     await _scrollController.animateTo(
-                                      _scrollController
-                                          .position.maxScrollExtent,
-                                      duration:
-                                          const Duration(milliseconds: 300),
+                                      _scrollController.position.maxScrollExtent,
+                                      duration: const Duration(milliseconds: 300),
                                       curve: Curves.easeOut,
                                     );
                                   }
@@ -200,14 +184,10 @@ class ActionView extends StatelessWidget {
                             hint: const Text("Select Profile"),
                             value: actionController.selectedProfile.value,
                             onChanged: (ProfileModel? newValue) async {
-                              await actionController
-                                  .setSelectedProfile(newValue!);
+                              await actionController.setSelectedProfile(newValue!);
                             },
-                            validator: (value) => value == null
-                                ? "Please select a profile."
-                                : null,
-                            items: profileController.profiles
-                                .map((ProfileModel profile) {
+                            validator: (value) => value == null ? "Please select a profile." : null,
+                            items: profileController.profiles.map((ProfileModel profile) {
                               return DropdownMenuItem<ProfileModel>(
                                 value: profile,
                                 child: Text(profile.name),
@@ -226,9 +206,7 @@ class ActionView extends StatelessWidget {
                             labelText: "URI",
                             border: InputBorder.none,
                           ),
-                          validator: (value) => value == null || value.isEmpty
-                              ? "URI cannot be empty."
-                              : null,
+                          validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -237,32 +215,25 @@ class ActionView extends StatelessWidget {
                         flex: 2,
                         child: Obx(() {
                           return WampMethodButton(
-                            selectedMethod: actionController
-                                    .selectedWampMethod.value.isNotEmpty
+                            selectedMethod: actionController.selectedWampMethod.value.isNotEmpty
                                 ? actionController.selectedWampMethod.value
                                 : "Call",
                             methods: wampMethods,
                             onMethodChanged: (String? newValue) {
-                              actionController.selectedWampMethod.value =
-                                  newValue!;
+                              actionController.selectedWampMethod.value = newValue!;
                             },
                             onMethodCalled: () async {
                               if (_formKey.currentState?.validate() ?? false) {
-                                List<String> args = argsController.controllers
-                                    .map((controller) => controller.text)
-                                    .toList();
+                                List<String> args =
+                                    argsController.controllers.map((controller) => controller.text).toList();
                                 Map<String, String> kwArgs = {
-                                  for (final entry
-                                      in kwargsController.tableData)
-                                    entry.key: entry.value,
+                                  for (final entry in kwargsController.tableData) entry.key: entry.value,
                                 };
 
                                 await actionController
                                     .performAction(
-                                  actionController
-                                          .selectedWampMethod.value.isNotEmpty
-                                      ? actionController
-                                          .selectedWampMethod.value
+                                  actionController.selectedWampMethod.value.isNotEmpty
+                                      ? actionController.selectedWampMethod.value
                                       : "Call",
                                   uriController.text,
                                   args,
@@ -271,10 +242,8 @@ class ActionView extends StatelessWidget {
                                     .then((_) async {
                                   if (_scrollController.hasClients) {
                                     await _scrollController.animateTo(
-                                      _scrollController
-                                          .position.maxScrollExtent,
-                                      duration:
-                                          const Duration(milliseconds: 300),
+                                      _scrollController.position.maxScrollExtent,
+                                      duration: const Duration(milliseconds: 300),
                                       curve: Curves.easeOut,
                                     );
                                   }
@@ -328,9 +297,8 @@ class ActionView extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),
-                      onPressed: argsController.controllers.length > 1
-                          ? () => argsController.removeController(i)
-                          : null,
+                      onPressed:
+                          argsController.controllers.length > 1 ? () => argsController.removeController(i) : null,
                     ),
                   ],
                 ),
@@ -404,9 +372,7 @@ class ActionView extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),
-                      onPressed: kwargsController.tableData.length > 1
-                          ? () => kwargsController.removeRow(i)
-                          : null,
+                      onPressed: kwargsController.tableData.length > 1 ? () => kwargsController.removeRow(i) : null,
                     ),
                   ],
                 ),
@@ -421,9 +387,7 @@ class ActionView extends StatelessWidget {
     return Obx(() {
       final Orientation orientation = MediaQuery.of(Get.context!).orientation;
       final double screenHeight = MediaQuery.of(Get.context!).size.height;
-      final double logsHeight = orientation == Orientation.portrait
-          ? screenHeight * 0.25
-          : screenHeight * 0.4;
+      final double logsHeight = orientation == Orientation.portrait ? screenHeight * 0.25 : screenHeight * 0.4;
 
       return Container(
         padding: const EdgeInsets.all(8),
@@ -456,5 +420,16 @@ class ActionView extends StatelessWidget {
         ),
       );
     });
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ActionController>("actionController", actionController));
+    properties.add(DiagnosticsProperty<ProfileController>("profileController", profileController));
+    properties.add(DiagnosticsProperty<ArgsController>("argsController", argsController));
+    properties.add(DiagnosticsProperty<TextEditingController>("uriController", uriController));
+    properties.add(DiagnosticsProperty<KwargsController>("kwargsController", kwargsController));
+    properties.add(IterableProperty<String>("wampMethods", wampMethods));
   }
 }
