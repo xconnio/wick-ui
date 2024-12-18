@@ -20,13 +20,13 @@ class WampMethodButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 200,
-      height: 50,
+      width: 150, // Reduced width for smaller size
+      height: 40, // Reduced height for smaller size
       child: ElevatedButton(
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.all(DarkThemeColors.primaryColor),
           padding: WidgetStateProperty.all(
-            const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            const EdgeInsets.symmetric(vertical: 6, horizontal: 10), // Adjusted padding for smaller size
           ),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
@@ -38,11 +38,14 @@ class WampMethodButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              selectedMethod ?? "Call", // Show "Call" by default
-              style: const TextStyle(
-                color: DarkThemeColors.onPrimaryColor,
-                fontSize: 14,
+            Expanded(
+              child: Text(
+                selectedMethod ?? "Call", // Default label
+                style: const TextStyle(
+                  color: DarkThemeColors.onPrimaryColor,
+                  fontSize: 12, // Reduced font size for smaller button
+                ),
+                overflow: TextOverflow.ellipsis, // Avoid overflow issues
               ),
             ),
             PopupMenuButton<String>(
@@ -51,8 +54,20 @@ class WampMethodButton extends StatelessWidget {
                 color: DarkThemeColors.onPrimaryColor,
               ),
               color: DarkThemeColors.cardColor,
+              tooltip: "Select a method", // Accessibility improvement
               onSelected: onMethodChanged,
               itemBuilder: (BuildContext context) {
+                if (methods.isEmpty) {
+                  return [
+                    const PopupMenuItem<String>(
+                      enabled: false,
+                      child: Text(
+                        "No methods available",
+                        style: TextStyle(color: DarkThemeColors.bodyTextColor),
+                      ),
+                    ),
+                  ];
+                }
                 return methods.map((String method) {
                   return PopupMenuItem<String>(
                     value: method,

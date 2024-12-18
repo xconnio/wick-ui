@@ -24,7 +24,7 @@ class ResponsiveScaffold extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Wick"),
+        title: Text(title ?? "Wick"),
       ),
       body: Row(
         children: [
