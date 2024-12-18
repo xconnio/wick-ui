@@ -14,55 +14,68 @@ class ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ResponsiveScaffold(
       body: Obx(() {
-        return ListView.builder(
-          itemCount: controller.profiles.length,
-          itemBuilder: (context, index) {
-            final profile = controller.profiles[index];
-
-            return ListTile(
-              title: Text(
-                profile.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Realm: ${profile.realm}"),
-                  Text("URL: ${profile.url}"),
-                  Text("Auth ID: ${profile.authid}"),
-                  Text("Auth Method: ${profile.authmethod}"),
-                  Text("Serializer: ${profile.serializer}"),
-                ],
-              ),
-              isThreeLine: true,
-              trailing: Obx(() {
-                bool isConnected = controller.connectedProfiles.contains(profile);
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
+        return controller.profiles.isEmpty
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () async {
-                        await controller.createProfile(profile: profile);
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(isConnected ? Icons.stop : Icons.play_arrow),
-                      onPressed: () async => controller.toggleConnection(profile),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () async => controller.deleteProfile(profile),
-                    ),
+                    Text("No profiles created yet."),
                   ],
-                );
-              }),
-            );
-          },
-        );
+                ),
+              )
+            : ListView.builder(
+                itemCount: controller.profiles.length,
+                itemBuilder: (context, index) {
+                  final profile = controller.profiles[index];
+
+                  return ListTile(
+                    title: Text(
+                      profile.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Realm: ${profile.realm}"),
+                        Text("URL: ${profile.url}"),
+                        Text("Auth ID: ${profile.authid}"),
+                        Text("Auth Method: ${profile.authmethod}"),
+                        Text("Serializer: ${profile.serializer}"),
+                      ],
+                    ),
+                    isThreeLine: true,
+                    trailing: Obx(() {
+                      bool isConnected =
+                          controller.connectedProfiles.contains(profile);
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () async {
+                              await controller.createProfile(profile: profile);
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                                isConnected ? Icons.stop : Icons.play_arrow),
+                            onPressed: () async =>
+                                controller.toggleConnection(profile),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () async =>
+                                controller.deleteProfile(profile),
+                          ),
+                        ],
+                      );
+                    }),
+                  );
+                },
+              );
       }),
       floatingActionButton: FloatingActionButton(
         backgroundColor: DarkThemeColors.primaryColor,
@@ -75,6 +88,7 @@ class ProfileView extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<ProfileController>("controller", controller));
+    properties
+        .add(DiagnosticsProperty<ProfileController>("controller", controller));
   }
 }

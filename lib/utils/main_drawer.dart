@@ -10,11 +10,24 @@ class MainDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: isSidebar ? 250 : null,
+    return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
+          if (!isSidebar)
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+              child: Text(
+                "Wick", // Replace with your actual app title
+                style: TextStyle(
+                  color: Theme.of(context).primaryTextTheme.titleLarge?.color,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text("Profile"),

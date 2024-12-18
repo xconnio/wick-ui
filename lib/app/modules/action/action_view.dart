@@ -1,5 +1,3 @@
-import "dart:io";
-
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
@@ -43,23 +41,34 @@ class ActionView extends StatelessWidget {
             _buildLogsWindow(),
             const SizedBox(height: 8),
             Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _buildArgsTab(),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildKwargsTab(),
-                    ),
-                  ],
-                ),
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  if (constraints.maxWidth >= 800) {
+                    // Desktop/Web layout
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildArgsTab(),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildKwargsTab(),
+                        ),
+                      ],
+                    );
+                  } else {
+                    // Mobile/Tablet layout
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildArgsTab(),
+                        const SizedBox(height: 8),
+                        _buildKwargsTab(),
+                      ],
+                    );
+                  }
+                },
               ),
             ),
           ],
@@ -69,7 +78,9 @@ class ActionView extends StatelessWidget {
   }
 
   Widget _buildUriBar() {
-    final bool isMobile = Platform.isAndroid || Platform.isIOS;
+    final bool isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
 
     return Form(
       key: _formKey,
@@ -82,20 +93,21 @@ class ActionView extends StatelessWidget {
         child: Column(
           children: isMobile
               ? [
-                  // First row: URI
+                  // URI Input Field (Mobile/Web layout)
                   TextFormField(
                     controller: uriController,
                     decoration: const InputDecoration(
                       labelText: "URI",
                       border: InputBorder.none,
                     ),
-                    validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                    validator: (value) => value == null || value.isEmpty
+                        ? "URI cannot be empty."
+                        : null,
                   ),
                   const SizedBox(height: 8),
-                  // Second row: Profile and WAMP Method
+                  // Profile and WAMP Method Row
                   Row(
                     children: [
-                      // Profile Dropdown
                       Expanded(
                         flex: 2,
                         child: Obx(() {
@@ -104,10 +116,14 @@ class ActionView extends StatelessWidget {
                             hint: const Text("Select Profile"),
                             value: actionController.selectedProfile.value,
                             onChanged: (ProfileModel? newValue) async {
-                              await actionController.setSelectedProfile(newValue!);
+                              await actionController
+                                  .setSelectedProfile(newValue!);
                             },
-                            validator: (value) => value == null ? "Please select a profile." : null,
-                            items: profileController.profiles.map((ProfileModel profile) {
+                            validator: (value) => value == null
+                                ? "Please select a profile."
+                                : null,
+                            items: profileController.profiles
+                                .map((ProfileModel profile) {
                               return DropdownMenuItem<ProfileModel>(
                                 value: profile,
                                 child: Text(profile.name),
@@ -122,25 +138,32 @@ class ActionView extends StatelessWidget {
                         flex: 2,
                         child: Obx(() {
                           return WampMethodButton(
-                            selectedMethod: actionController.selectedWampMethod.value.isNotEmpty
+                            selectedMethod: actionController
+                                    .selectedWampMethod.value.isNotEmpty
                                 ? actionController.selectedWampMethod.value
                                 : "Call",
                             methods: wampMethods,
                             onMethodChanged: (String? newValue) {
-                              actionController.selectedWampMethod.value = newValue!;
+                              actionController.selectedWampMethod.value =
+                                  newValue!;
                             },
                             onMethodCalled: () async {
                               if (_formKey.currentState?.validate() ?? false) {
-                                List<String> args =
-                                    argsController.controllers.map((controller) => controller.text).toList();
+                                List<String> args = argsController.controllers
+                                    .map((controller) => controller.text)
+                                    .toList();
                                 Map<String, String> kwArgs = {
-                                  for (final entry in kwargsController.tableData) entry.key: entry.value,
+                                  for (final entry
+                                      in kwargsController.tableData)
+                                    entry.key: entry.value,
                                 };
 
                                 await actionController
                                     .performAction(
-                                  actionController.selectedWampMethod.value.isNotEmpty
-                                      ? actionController.selectedWampMethod.value
+                                  actionController
+                                          .selectedWampMethod.value.isNotEmpty
+                                      ? actionController
+                                          .selectedWampMethod.value
                                       : "Call",
                                   uriController.text,
                                   args,
@@ -149,8 +172,10 @@ class ActionView extends StatelessWidget {
                                     .then((_) async {
                                   if (_scrollController.hasClients) {
                                     await _scrollController.animateTo(
-                                      _scrollController.position.maxScrollExtent,
-                                      duration: const Duration(milliseconds: 300),
+                                      _scrollController
+                                          .position.maxScrollExtent,
+                                      duration:
+                                          const Duration(milliseconds: 300),
                                       curve: Curves.easeOut,
                                     );
                                   }
@@ -164,10 +189,9 @@ class ActionView extends StatelessWidget {
                   ),
                 ]
               : [
-                  // Desktop and Web Layout: Single Row
+                  // Desktop Layout (no mobile-specific behavior)
                   Row(
                     children: [
-                      // Profile Dropdown
                       Expanded(
                         flex: 2,
                         child: Obx(() {
@@ -176,10 +200,14 @@ class ActionView extends StatelessWidget {
                             hint: const Text("Select Profile"),
                             value: actionController.selectedProfile.value,
                             onChanged: (ProfileModel? newValue) async {
-                              await actionController.setSelectedProfile(newValue!);
+                              await actionController
+                                  .setSelectedProfile(newValue!);
                             },
-                            validator: (value) => value == null ? "Please select a profile." : null,
-                            items: profileController.profiles.map((ProfileModel profile) {
+                            validator: (value) => value == null
+                                ? "Please select a profile."
+                                : null,
+                            items: profileController.profiles
+                                .map((ProfileModel profile) {
                               return DropdownMenuItem<ProfileModel>(
                                 value: profile,
                                 child: Text(profile.name),
@@ -198,7 +226,9 @@ class ActionView extends StatelessWidget {
                             labelText: "URI",
                             border: InputBorder.none,
                           ),
-                          validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                          validator: (value) => value == null || value.isEmpty
+                              ? "URI cannot be empty."
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -207,25 +237,32 @@ class ActionView extends StatelessWidget {
                         flex: 2,
                         child: Obx(() {
                           return WampMethodButton(
-                            selectedMethod: actionController.selectedWampMethod.value.isNotEmpty
+                            selectedMethod: actionController
+                                    .selectedWampMethod.value.isNotEmpty
                                 ? actionController.selectedWampMethod.value
                                 : "Call",
                             methods: wampMethods,
                             onMethodChanged: (String? newValue) {
-                              actionController.selectedWampMethod.value = newValue!;
+                              actionController.selectedWampMethod.value =
+                                  newValue!;
                             },
                             onMethodCalled: () async {
                               if (_formKey.currentState?.validate() ?? false) {
-                                List<String> args =
-                                    argsController.controllers.map((controller) => controller.text).toList();
+                                List<String> args = argsController.controllers
+                                    .map((controller) => controller.text)
+                                    .toList();
                                 Map<String, String> kwArgs = {
-                                  for (final entry in kwargsController.tableData) entry.key: entry.value,
+                                  for (final entry
+                                      in kwargsController.tableData)
+                                    entry.key: entry.value,
                                 };
 
                                 await actionController
                                     .performAction(
-                                  actionController.selectedWampMethod.value.isNotEmpty
-                                      ? actionController.selectedWampMethod.value
+                                  actionController
+                                          .selectedWampMethod.value.isNotEmpty
+                                      ? actionController
+                                          .selectedWampMethod.value
                                       : "Call",
                                   uriController.text,
                                   args,
@@ -234,8 +271,10 @@ class ActionView extends StatelessWidget {
                                     .then((_) async {
                                   if (_scrollController.hasClients) {
                                     await _scrollController.animateTo(
-                                      _scrollController.position.maxScrollExtent,
-                                      duration: const Duration(milliseconds: 300),
+                                      _scrollController
+                                          .position.maxScrollExtent,
+                                      duration:
+                                          const Duration(milliseconds: 300),
                                       curve: Curves.easeOut,
                                     );
                                   }
@@ -289,8 +328,9 @@ class ActionView extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),
-                      onPressed:
-                          argsController.controllers.length > 1 ? () => argsController.removeController(i) : null,
+                      onPressed: argsController.controllers.length > 1
+                          ? () => argsController.removeController(i)
+                          : null,
                     ),
                   ],
                 ),
@@ -312,6 +352,7 @@ class ActionView extends StatelessWidget {
             ),
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -329,11 +370,11 @@ class ActionView extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      flex: 2,
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: "Key ${i + 1}",
-                          border: const OutlineInputBorder(),
+                      child: TextFormField(
+                        initialValue: kwargsController.tableData[i].key,
+                        decoration: const InputDecoration(
+                          labelText: "Key",
+                          border: OutlineInputBorder(),
                         ),
                         onChanged: (value) {
                           final updatedEntry = MapEntry(
@@ -346,16 +387,16 @@ class ActionView extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      flex: 3,
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: "Value ${i + 1}",
-                          border: const OutlineInputBorder(),
+                      child: TextFormField(
+                        initialValue: kwargsController.tableData[i].value,
+                        decoration: const InputDecoration(
+                          labelText: "Value",
+                          border: OutlineInputBorder(),
                         ),
                         onChanged: (value) {
                           final updatedEntry = MapEntry(
-                            kwargsController.tableData[i].key,
                             value,
+                            kwargsController.tableData[i].value,
                           );
                           kwargsController.updateRow(i, updatedEntry);
                         },
@@ -363,7 +404,9 @@ class ActionView extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),
-                      onPressed: kwargsController.tableData.length > 1 ? () => kwargsController.removeRow(i) : null,
+                      onPressed: kwargsController.tableData.length > 1
+                          ? () => kwargsController.removeRow(i)
+                          : null,
                     ),
                   ],
                 ),
@@ -376,15 +419,11 @@ class ActionView extends StatelessWidget {
 
   Widget _buildLogsWindow() {
     return Obx(() {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (_scrollController.hasClients) {
-          await _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+      final Orientation orientation = MediaQuery.of(Get.context!).orientation;
+      final double screenHeight = MediaQuery.of(Get.context!).size.height;
+      final double logsHeight = orientation == Orientation.portrait
+          ? screenHeight * 0.25
+          : screenHeight * 0.4;
 
       return Container(
         padding: const EdgeInsets.all(8),
@@ -404,51 +443,18 @@ class ActionView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(8),
-              height: 150,
-              child: SingleChildScrollView(
+            SizedBox(
+              height: logsHeight,
+              child: ListView(
                 controller: _scrollController,
-                child: Text(actionController.logsMessage.value),
+                children: [
+                  Text(actionController.logsMessage.value),
+                ],
               ),
             ),
           ],
         ),
       );
     });
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(
-        DiagnosticsProperty<ActionController>(
-          "actionController",
-          actionController,
-        ),
-      )
-      ..add(IterableProperty<String>("wampMethods", wampMethods))
-      ..add(
-        DiagnosticsProperty<TextEditingController>(
-          "uriController",
-          uriController,
-        ),
-      )
-      ..add(
-        DiagnosticsProperty<ArgsController>("argsController", argsController),
-      )
-      ..add(
-        DiagnosticsProperty<ProfileController>(
-          "profileController",
-          profileController,
-        ),
-      )
-      ..add(
-        DiagnosticsProperty<KwargsController>(
-          "kwargsController",
-          kwargsController,
-        ),
-      );
   }
 }
