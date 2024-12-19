@@ -74,12 +74,10 @@ class ProfileController extends GetxController {
     final serializers = ["JSON", "MsgPack", "CBOR"];
     final authMethods = ["Anonymous", "Ticket", "WAMP-CRA", "CryptoSign"];
 
-    var selectedSerializer = serializers.contains(profile?.serializer)
-        ? profile?.serializer ?? serializers.first
-        : serializers.first;
-    var selectedAuthMethod = authMethods.contains(profile?.authmethod)
-        ? profile?.authmethod ?? authMethods.first
-        : authMethods.first;
+    var selectedSerializer =
+        serializers.contains(profile?.serializer) ? profile?.serializer ?? serializers.first : serializers.first;
+    var selectedAuthMethod =
+        authMethods.contains(profile?.authmethod) ? profile?.authmethod ?? authMethods.first : authMethods.first;
 
     await Get.dialog(
       StatefulBuilder(
@@ -116,8 +114,7 @@ class ProfileController extends GetxController {
                         if (value!.isEmpty) {
                           return "Please enter a URL";
                         }
-                        if (!value.startsWith("ws://") &&
-                            !value.startsWith("wss://")) {
+                        if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
                           return "URL must start with ws:// or wss://";
                         }
                         return null;
@@ -126,13 +123,11 @@ class ProfileController extends GetxController {
                     TextFormField(
                       controller: realmController,
                       decoration: const InputDecoration(labelText: "Realm"),
-                      validator: (value) =>
-                          value!.isEmpty ? "Please enter a realm" : null,
+                      validator: (value) => value!.isEmpty ? "Please enter a realm" : null,
                     ),
                     DropdownButtonFormField<String>(
                       value: selectedSerializer,
-                      decoration:
-                          const InputDecoration(labelText: "Serializer"),
+                      decoration: const InputDecoration(labelText: "Serializer"),
                       items: serializers.map((serializer) {
                         return DropdownMenuItem<String>(
                           value: serializer,
@@ -144,15 +139,13 @@ class ProfileController extends GetxController {
                           selectedSerializer = value!;
                         });
                       },
-                      validator: (value) =>
-                          value == null ? "Please select a serializer" : null,
+                      validator: (value) => value == null ? "Please select a serializer" : null,
                     ),
                     TextFormField(
                       controller: authidController,
                       decoration: const InputDecoration(labelText: "Auth ID"),
                       validator: (value) {
-                        if (selectedAuthMethod != "Anonymous" &&
-                            (value == null || value.isEmpty)) {
+                        if (selectedAuthMethod != "Anonymous" && (value == null || value.isEmpty)) {
                           return "Please enter an Auth ID";
                         }
                         return null;
@@ -160,8 +153,7 @@ class ProfileController extends GetxController {
                     ),
                     DropdownButtonFormField<String>(
                       value: selectedAuthMethod,
-                      decoration:
-                          const InputDecoration(labelText: "Auth Method"),
+                      decoration: const InputDecoration(labelText: "Auth Method"),
                       items: authMethods.map((authMethod) {
                         return DropdownMenuItem<String>(
                           value: authMethod,
@@ -173,8 +165,7 @@ class ProfileController extends GetxController {
                           selectedAuthMethod = value!;
                         });
                       },
-                      validator: (value) =>
-                          value == null ? "Please select an auth method" : null,
+                      validator: (value) => value == null ? "Please select an auth method" : null,
                     ),
                     if (selectedAuthMethod != "Anonymous")
                       TextFormField(
@@ -185,9 +176,7 @@ class ProfileController extends GetxController {
                           labelText: "Secret",
                           suffixIcon: IconButton(
                             icon: Icon(
-                              isSecretHidden
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+                              isSecretHidden ? Icons.visibility : Icons.visibility_off,
                             ),
                             onPressed: () {
                               setState(() {
@@ -196,8 +185,7 @@ class ProfileController extends GetxController {
                             },
                           ),
                         ),
-                        validator: (value) =>
-                            value!.isEmpty ? "Please enter a secret" : null,
+                        validator: (value) => value!.isEmpty ? "Please enter a secret" : null,
                       ),
                   ],
                 ),
