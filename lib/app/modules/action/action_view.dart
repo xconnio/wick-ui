@@ -226,6 +226,7 @@ class ActionView extends StatelessWidget {
                               if (_formKey.currentState?.validate() ?? false) {
                                 List<String> args =
                                     argsController.controllers.map((controller) => controller.text).toList();
+
                                 Map<String, String> kwArgs = {
                                   for (final entry in kwargsController.tableData) entry.key: entry.value,
                                 };
@@ -363,8 +364,8 @@ class ActionView extends StatelessWidget {
                         ),
                         onChanged: (value) {
                           final updatedEntry = MapEntry(
+                            kwargsController.tableData[i].key,
                             value,
-                            kwargsController.tableData[i].value,
                           );
                           kwargsController.updateRow(i, updatedEntry);
                         },
