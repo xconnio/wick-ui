@@ -21,17 +21,20 @@ jobs:
         run: make install
 
       - name: Build web app
-        run: make build-web-ci
+        run: make build-web
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Deploy static site to S3 bucket
-        run: aws s3 sync ./build/web/ s3://${{ secrets.AWS_BUCKET }}/wick/ --delete
-
-      - name: Invalidate CloudFront
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/wick/*"
+      - name: Push Artifacts to Target Repo
+        env:
+          GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+        run: |
+          # Set up target repository
+          git config --global user.name "asimfarooq5"
+          git config --global user.email "asimfarooq5@gmail.com"
+          git clone https://x-access-token:${TARGET_REPO_TOKEN}@github.com/xconnio/wick-ui-artifacts.git
+          # Copy artifacts to target repo
+          cp -R build/web/* wick-ui-artifacts/
+          cd wick-ui-artifacts
+          # Commit and push changes
+          git add .
+          git commit -m "Update web artifacts from $GITHUB_SHA"
+          git push
