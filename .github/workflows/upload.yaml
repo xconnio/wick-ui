@@ -30,7 +30,7 @@ jobs:
           # Set up target repository
           git config --global user.name "asimfarooq5"
           git config --global user.email "asimfarooq5@gmail.com"
-          git clone https://x-access-token:${TARGET_REPO_TOKEN}@github.com/xconnio/wick-ui-artifacts.git
+          git clone https://x-access-token:${GH_ACCESS_TOKEN}@github.com/xconnio/wick-ui-artifacts.git
           # Copy artifacts to target repo
           cp -R build/web/* wick-ui-artifacts/
           cd wick-ui-artifacts
