@@ -31,6 +31,26 @@ class ActionController extends GetxController {
     if (selectedProfile.value != null) {
       try {
         Logs result;
+        var argsEmpty = true;
+        for (final arg in args) {
+          if (arg.trim().isNotEmpty) {
+            argsEmpty = false;
+            break;
+          }
+        }
+        if (argsEmpty) {
+          args.clear();
+        }
+
+        var kwargsEmpty = true;
+        kwArgs.forEach((String key, String value) {
+          if (key.trim().isNotEmpty || value.trim().isNotEmpty) {
+            kwargsEmpty = false;
+          }
+        });
+        if (kwargsEmpty) {
+          kwArgs.clear();
+        }
         switch (actionType) {
           case "Call":
             result = await performCallAction(uri, args, kwArgs);
@@ -99,7 +119,11 @@ class ActionController extends GetxController {
     }
   }
 
-  Future<Logs> performPublishAction(String uri, List<String> args, Map<String, String> kwArgs) async {
+  Future<Logs> performPublishAction(
+    String uri,
+    List<String> args,
+    Map<String, String> kwArgs,
+  ) async {
     try {
       final session = await SessionManager.connect(selectedProfile.value!);
       await session.publish(uri, args: args, kwargs: kwArgs);
