@@ -35,6 +35,8 @@ dependencies:
   ini: ^2.1.0
   path_provider: ^2.1.5
   shared_preferences: ^2.0.6
+  tab_container: ^3.5.3
+
   xconn:
     git: https://github.com/xconnio/xconn-dart
 
