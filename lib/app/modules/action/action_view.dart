@@ -237,7 +237,6 @@ class ActionView extends StatelessWidget {
                 ),
               ),
             ),
-
             PopupMenuButton<String>(
               onSelected: (String newValue) {
                 actionController.selectedWampMethod.value = newValue;

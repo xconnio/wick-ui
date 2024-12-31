@@ -12,8 +12,9 @@ class TabContainerWidget extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(ObjectFlagProperty<Widget Function(BuildContext p1, int p2)>.has("buildScreen", buildScreen))
-    ..add(ObjectFlagProperty<Widget Function(BuildContext p1, int p2)>.has("buildScreen", buildScreen));
+    properties
+      ..add(ObjectFlagProperty<Widget Function(BuildContext p1, int p2)>.has("buildScreen", buildScreen))
+      ..add(ObjectFlagProperty<Widget Function(BuildContext p1, int p2)>.has("buildScreen", buildScreen));
   }
 }
 
