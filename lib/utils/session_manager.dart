@@ -30,7 +30,7 @@ mixin SessionManager {
       client = Client(serializer: serializer);
     }
 
-    return client.connect(profile.url, profile.realm);
+    return client.connect(profile.uri, profile.realm);
   }
 
   static Serializer _getSerializer(String? serializerString) {
