@@ -10,14 +10,14 @@ class ProfileModel {
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) => ProfileModel(
-    name: json["name"],
-    uri: json["uri"],
-    realm: json["realm"],
-    serializer: json["serializer"],
-    authid: json["authid"],
-    authmethod: json["authmethod"],
-    secret: json["secret"],
-  );
+        name: json["name"],
+        uri: json["uri"],
+        realm: json["realm"],
+        serializer: json["serializer"],
+        authid: json["authid"],
+        authmethod: json["authmethod"],
+        secret: json["secret"],
+      );
 
   final String name;
   final String uri;
@@ -28,12 +28,12 @@ class ProfileModel {
   final String secret;
 
   Map<String, dynamic> toJson() => {
-    "name": name,
-    "uri": uri,
-    "realm": realm,
-    "serializer": serializer,
-    "authid": authid,
-    "authmethod": authmethod,
-    "secret": secret,
-  };
+        "name": name,
+        "uri": uri,
+        "realm": realm,
+        "serializer": serializer,
+        "authid": authid,
+        "authmethod": authmethod,
+        "secret": secret,
+      };
 }

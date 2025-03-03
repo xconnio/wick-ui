@@ -54,14 +54,17 @@ class ProfileView extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              if (isConnecting) const Text(
-                                "Connecting...",
-                                style: TextStyle(
-                                  color: Colors.orange,
-                                  fontSize: 12,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ) else _StatusIndicator(isActive: isConnected),
+                              if (isConnecting)
+                                const Text(
+                                  "Connecting...",
+                                  style: TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                )
+                              else
+                                _StatusIndicator(isActive: isConnected),
                             ],
                           ),
                           const SizedBox(height: 8),

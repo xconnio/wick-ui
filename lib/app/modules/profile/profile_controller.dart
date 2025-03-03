@@ -71,9 +71,7 @@ class ProfileController extends GetxController {
           : "localhost",
     );
     final portController = TextEditingController(
-      text: profile?.uri != null
-          ? RegExp(r":(\d+)/ws$").firstMatch(profile!.uri)?.group(1) ?? "8080"
-          : "8080",
+      text: profile?.uri != null ? RegExp(r":(\d+)/ws$").firstMatch(profile!.uri)?.group(1) ?? "8080" : "8080",
     );
     final realmController = TextEditingController(text: profile?.realm ?? "");
     final authidController = TextEditingController(text: profile?.authid ?? "");
@@ -82,21 +80,18 @@ class ProfileController extends GetxController {
     final serializers = ["JSON", "MsgPack", "CBOR"];
     final authMethods = ["Anonymous", "Ticket", "WAMP-CRA", "CryptoSign"];
 
-    var selectedSerializer = serializers.contains(profile?.serializer)
-        ? profile?.serializer ?? serializers.first
-        : serializers.first;
-    var selectedAuthMethod = authMethods.contains(profile?.authmethod)
-        ? profile?.authmethod ?? authMethods.first
-        : authMethods.first;
+    var selectedSerializer =
+        serializers.contains(profile?.serializer) ? profile?.serializer ?? serializers.first : serializers.first;
+    var selectedAuthMethod =
+        authMethods.contains(profile?.authmethod) ? profile?.authmethod ?? authMethods.first : authMethods.first;
     var selectedProtocol = (profile?.uri.startsWith("wss://") ?? false) ? "wss://" : "ws://";
 
     await Get.dialog(
       StatefulBuilder(
         builder: (context, setState) {
           bool isDesktop = MediaQuery.of(context).size.width > 600;
-          double dialogWidth = isDesktop
-              ? MediaQuery.of(context).size.width * 0.6
-              : MediaQuery.of(context).size.width * 0.9;
+          double dialogWidth =
+              isDesktop ? MediaQuery.of(context).size.width * 0.6 : MediaQuery.of(context).size.width * 0.9;
 
           return AlertDialog(
             title: Text(profile == null ? "Create Profile" : "Update Profile"),
@@ -120,7 +115,7 @@ class ProfileController extends GetxController {
                               return "Please enter a name";
                             }
                             if (profiles.any(
-                                  (p) => p.name == value && p.name != profile?.name,
+                              (p) => p.name == value && p.name != profile?.name,
                             )) {
                               return "Name already exists. Choose a different name.";
                             }
@@ -128,131 +123,45 @@ class ProfileController extends GetxController {
                           },
                         ),
                         SizedBox(height: _responsiveSpacing(context)),
-                        if (isDesktop) Row(
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Radio<String>(
-                                  value: "ws://",
-                                  groupValue: selectedProtocol,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedProtocol = value!;
-                                    });
-                                  },
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                const Text("ws://"),
-                              ],
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Radio<String>(
-                                  value: "wss://",
-                                  groupValue: selectedProtocol,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedProtocol = value!;
-                                    });
-                                  },
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                const Text("wss://"),
-                              ],
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Padding(
-                                padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-                                child: _buildTextField(
-                                  controller: uriController,
-                                  labelText: "URI",
-                                  context: context,
-                                  validator: (value) {
-                                    if (value!.isEmpty) {
-                                      return "Please enter a URI";
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ),
-                            Flexible(
-                              child: Padding(
-                                padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-                                child: SizedBox(
-                                  width: 100,
-                                  child: _buildTextField(
-                                    controller: portController,
-                                    labelText: "Port",
-                                    context: context,
-                                    keyboardType: TextInputType.number,
-                                    validator: (value) {
-                                      if (value!.isEmpty) {
-                                        return "Please enter a port";
-                                      }
-                                      if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                                        return "Invalid port";
-                                      }
-                                      return null;
+                        if (isDesktop)
+                          Row(
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Radio<String>(
+                                    value: "ws://",
+                                    groupValue: selectedProtocol,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedProtocol = value!;
+                                      });
                                     },
-                                    maxLength: 5,
+                                    visualDensity: VisualDensity.compact,
                                   ),
-                                ),
+                                  const Text("ws://"),
+                                ],
                               ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-                              child: const Text("/ws"),
-                            ),
-                          ],
-                        ) else Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Radio<String>(
-                                      value: "ws://",
-                                      groupValue: selectedProtocol,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          selectedProtocol = value!;
-                                        });
-                                      },
-                                      visualDensity: VisualDensity.compact,
-                                    ),
-                                    const Text("ws://"),
-                                  ],
-                                ),
-                                SizedBox(width: _responsiveSpacing(context)),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Radio<String>(
-                                      value: "wss://",
-                                      groupValue: selectedProtocol,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          selectedProtocol = value!;
-                                        });
-                                      },
-                                      visualDensity: VisualDensity.compact,
-                                    ),
-                                    const Text("wss://"),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: _responsiveSpacing(context) / 2),
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Radio<String>(
+                                    value: "wss://",
+                                    groupValue: selectedProtocol,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedProtocol = value!;
+                                      });
+                                    },
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  const Text("wss://"),
+                                ],
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Padding(
+                                  padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
                                   child: _buildTextField(
                                     controller: uriController,
                                     labelText: "URI",
@@ -265,8 +174,10 @@ class ProfileController extends GetxController {
                                     },
                                   ),
                                 ),
-                                SizedBox(width: _responsiveSpacing(context) / 2),
-                                Flexible(
+                              ),
+                              Flexible(
+                                child: Padding(
+                                  padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
                                   child: SizedBox(
                                     width: 100,
                                     child: _buildTextField(
@@ -287,14 +198,101 @@ class ProfileController extends GetxController {
                                     ),
                                   ),
                                 ),
-                                Padding(
-                                  padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-                                  child: const Text("/ws"),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
+                                child: const Text("/ws"),
+                              ),
+                            ],
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Radio<String>(
+                                        value: "ws://",
+                                        groupValue: selectedProtocol,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedProtocol = value!;
+                                          });
+                                        },
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      const Text("ws://"),
+                                    ],
+                                  ),
+                                  SizedBox(width: _responsiveSpacing(context)),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Radio<String>(
+                                        value: "wss://",
+                                        groupValue: selectedProtocol,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedProtocol = value!;
+                                          });
+                                        },
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      const Text("wss://"),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: _responsiveSpacing(context) / 2),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildTextField(
+                                      controller: uriController,
+                                      labelText: "URI",
+                                      context: context,
+                                      validator: (value) {
+                                        if (value!.isEmpty) {
+                                          return "Please enter a URI";
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(width: _responsiveSpacing(context) / 2),
+                                  Flexible(
+                                    child: SizedBox(
+                                      width: 100,
+                                      child: _buildTextField(
+                                        controller: portController,
+                                        labelText: "Port",
+                                        context: context,
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value!.isEmpty) {
+                                            return "Please enter a port";
+                                          }
+                                          if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                                            return "Invalid port";
+                                          }
+                                          return null;
+                                        },
+                                        maxLength: 5,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
+                                    child: const Text("/ws"),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         SizedBox(height: _responsiveSpacing(context)),
                         _buildResponsiveFields(
                           isDesktop: isDesktop,
@@ -379,7 +377,9 @@ class ProfileController extends GetxController {
                             controller: secretController,
                             labelText: _getSecretLabel(selectedAuthMethod),
                             context: context,
-                            validator: (value) => value!.isEmpty ? "Please enter ${_getSecretLabel(selectedAuthMethod).toLowerCase()}" : null,
+                            validator: (value) => value!.isEmpty
+                                ? "Please enter ${_getSecretLabel(selectedAuthMethod).toLowerCase()}"
+                                : null,
                           ),
                       ],
                     ),
