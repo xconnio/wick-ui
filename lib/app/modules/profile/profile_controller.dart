@@ -65,129 +65,325 @@ class ProfileController extends GetxController {
   Future<void> createProfile({ProfileModel? profile}) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: profile?.name ?? "");
-    final urlController = TextEditingController(text: profile?.url ?? "");
+    final uriController = TextEditingController(
+      text: profile?.uri != null
+          ? profile!.uri.replaceAll(RegExp("^(ws://|wss://)"), "").replaceAll(RegExp(r":\d+/ws$"), "")
+          : "localhost",
+    );
+    final portController = TextEditingController(
+      text: profile?.uri != null
+          ? RegExp(r":(\d+)/ws$").firstMatch(profile!.uri)?.group(1) ?? "8080"
+          : "8080",
+    );
     final realmController = TextEditingController(text: profile?.realm ?? "");
     final authidController = TextEditingController(text: profile?.authid ?? "");
     final secretController = TextEditingController(text: profile?.secret ?? "");
-    bool isSecretHidden = true;
 
     final serializers = ["JSON", "MsgPack", "CBOR"];
     final authMethods = ["Anonymous", "Ticket", "WAMP-CRA", "CryptoSign"];
 
-    var selectedSerializer =
-        serializers.contains(profile?.serializer) ? profile?.serializer ?? serializers.first : serializers.first;
-    var selectedAuthMethod =
-        authMethods.contains(profile?.authmethod) ? profile?.authmethod ?? authMethods.first : authMethods.first;
+    var selectedSerializer = serializers.contains(profile?.serializer)
+        ? profile?.serializer ?? serializers.first
+        : serializers.first;
+    var selectedAuthMethod = authMethods.contains(profile?.authmethod)
+        ? profile?.authmethod ?? authMethods.first
+        : authMethods.first;
+    var selectedProtocol = (profile?.uri.startsWith("wss://") ?? false) ? "wss://" : "ws://";
 
     await Get.dialog(
       StatefulBuilder(
         builder: (context, setState) {
+          bool isDesktop = MediaQuery.of(context).size.width > 600;
+          double dialogWidth = isDesktop
+              ? MediaQuery.of(context).size.width * 0.6
+              : MediaQuery.of(context).size.width * 0.9;
+
           return AlertDialog(
             title: Text(profile == null ? "Create Profile" : "Update Profile"),
-            content: Form(
-              key: formKey,
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
               child: SizedBox(
-                width: 300,
-                height: 400,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: "Name"),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please enter a name";
-                        }
-                        if (profiles.any(
-                          (p) => p.name == value && p.name != profile?.name,
-                        )) {
-                          return "Name already exists. Choose a different name.";
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: urlController,
-                      decoration: const InputDecoration(labelText: "URL"),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please enter a URL";
-                        }
-                        if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
-                          return "URL must start with ws:// or wss://";
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: realmController,
-                      decoration: const InputDecoration(labelText: "Realm"),
-                      validator: (value) => value!.isEmpty ? "Please enter a realm" : null,
-                    ),
-                    DropdownButtonFormField<String>(
-                      value: selectedSerializer,
-                      decoration: const InputDecoration(labelText: "Serializer"),
-                      items: serializers.map((serializer) {
-                        return DropdownMenuItem<String>(
-                          value: serializer,
-                          child: Text(serializer),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedSerializer = value!;
-                        });
-                      },
-                      validator: (value) => value == null ? "Please select a serializer" : null,
-                    ),
-                    TextFormField(
-                      controller: authidController,
-                      decoration: const InputDecoration(labelText: "Auth ID"),
-                      validator: (value) {
-                        if (selectedAuthMethod != "Anonymous" && (value == null || value.isEmpty)) {
-                          return "Please enter an Auth ID";
-                        }
-                        return null;
-                      },
-                    ),
-                    DropdownButtonFormField<String>(
-                      value: selectedAuthMethod,
-                      decoration: const InputDecoration(labelText: "Auth Method"),
-                      items: authMethods.map((authMethod) {
-                        return DropdownMenuItem<String>(
-                          value: authMethod,
-                          child: Text(authMethod),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedAuthMethod = value!;
-                        });
-                      },
-                      validator: (value) => value == null ? "Please select an auth method" : null,
-                    ),
-                    if (selectedAuthMethod != "Anonymous")
-                      TextFormField(
-                        controller: secretController,
-                        obscureText: isSecretHidden,
-                        // Hide the secret by default
-                        decoration: InputDecoration(
-                          labelText: "Secret",
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              isSecretHidden ? Icons.visibility : Icons.visibility_off,
+                width: dialogWidth,
+                height: MediaQuery.of(context).size.height * 0.6,
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTextField(
+                          controller: nameController,
+                          labelText: "Name",
+                          context: context,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Please enter a name";
+                            }
+                            if (profiles.any(
+                                  (p) => p.name == value && p.name != profile?.name,
+                            )) {
+                              return "Name already exists. Choose a different name.";
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: _responsiveSpacing(context)),
+                        if (isDesktop) Row(
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Radio<String>(
+                                  value: "ws://",
+                                  groupValue: selectedProtocol,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedProtocol = value!;
+                                    });
+                                  },
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                const Text("ws://"),
+                              ],
                             ),
-                            onPressed: () {
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Radio<String>(
+                                  value: "wss://",
+                                  groupValue: selectedProtocol,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedProtocol = value!;
+                                    });
+                                  },
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                const Text("wss://"),
+                              ],
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Padding(
+                                padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
+                                child: _buildTextField(
+                                  controller: uriController,
+                                  labelText: "URI",
+                                  context: context,
+                                  validator: (value) {
+                                    if (value!.isEmpty) {
+                                      return "Please enter a URI";
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ),
+                            Flexible(
+                              child: Padding(
+                                padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
+                                child: SizedBox(
+                                  width: 100,
+                                  child: _buildTextField(
+                                    controller: portController,
+                                    labelText: "Port",
+                                    context: context,
+                                    keyboardType: TextInputType.number,
+                                    validator: (value) {
+                                      if (value!.isEmpty) {
+                                        return "Please enter a port";
+                                      }
+                                      if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                                        return "Invalid port";
+                                      }
+                                      return null;
+                                    },
+                                    maxLength: 5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
+                              child: const Text("/ws"),
+                            ),
+                          ],
+                        ) else Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Radio<String>(
+                                      value: "ws://",
+                                      groupValue: selectedProtocol,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedProtocol = value!;
+                                        });
+                                      },
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    const Text("ws://"),
+                                  ],
+                                ),
+                                SizedBox(width: _responsiveSpacing(context)),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Radio<String>(
+                                      value: "wss://",
+                                      groupValue: selectedProtocol,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedProtocol = value!;
+                                        });
+                                      },
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    const Text("wss://"),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: _responsiveSpacing(context) / 2),
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: _buildTextField(
+                                    controller: uriController,
+                                    labelText: "URI",
+                                    context: context,
+                                    validator: (value) {
+                                      if (value!.isEmpty) {
+                                        return "Please enter a URI";
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                SizedBox(width: _responsiveSpacing(context) / 2),
+                                Flexible(
+                                  child: SizedBox(
+                                    width: 100,
+                                    child: _buildTextField(
+                                      controller: portController,
+                                      labelText: "Port",
+                                      context: context,
+                                      keyboardType: TextInputType.number,
+                                      validator: (value) {
+                                        if (value!.isEmpty) {
+                                          return "Please enter a port";
+                                        }
+                                        if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                                          return "Invalid port";
+                                        }
+                                        return null;
+                                      },
+                                      maxLength: 5,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
+                                  child: const Text("/ws"),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: _responsiveSpacing(context)),
+                        _buildResponsiveFields(
+                          isDesktop: isDesktop,
+                          context: context,
+                          fieldOne: _buildTextField(
+                            controller: realmController,
+                            labelText: "Realm",
+                            context: context,
+                            validator: (value) => value!.isEmpty ? "Please enter a realm" : null,
+                          ),
+                          fieldTwo: DropdownButtonFormField<String>(
+                            value: selectedSerializer,
+                            decoration: InputDecoration(
+                              labelText: "Serializer",
+                              isDense: true,
+                              contentPadding: _responsivePadding(context),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            items: serializers.map((serializer) {
+                              return DropdownMenuItem<String>(
+                                value: serializer,
+                                child: Text(serializer, style: const TextStyle(fontSize: 14)),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
                               setState(() {
-                                isSecretHidden = !isSecretHidden;
+                                selectedSerializer = value!;
                               });
                             },
+                            validator: (value) => value == null ? "Please select a serializer" : null,
+                            isExpanded: true,
+                            icon: const Icon(Icons.arrow_drop_down),
                           ),
                         ),
-                        validator: (value) => value!.isEmpty ? "Please enter a secret" : null,
-                      ),
-                  ],
+                        SizedBox(height: _responsiveSpacing(context)),
+                        _buildResponsiveFields(
+                          isDesktop: isDesktop,
+                          context: context,
+                          fieldOne: _buildTextField(
+                            controller: authidController,
+                            labelText: "Auth ID",
+                            context: context,
+                            validator: (value) {
+                              if (selectedAuthMethod != "Anonymous" && (value == null || value.isEmpty)) {
+                                return "Please enter an Auth ID";
+                              }
+                              return null;
+                            },
+                          ),
+                          fieldTwo: DropdownButtonFormField<String>(
+                            value: selectedAuthMethod,
+                            decoration: InputDecoration(
+                              labelText: "Auth Method",
+                              isDense: true,
+                              contentPadding: _responsivePadding(context),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            items: authMethods.map((authMethod) {
+                              return DropdownMenuItem<String>(
+                                value: authMethod,
+                                child: Text(authMethod, style: const TextStyle(fontSize: 14)),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedAuthMethod = value!;
+                                secretController.clear();
+                              });
+                            },
+                            validator: (value) => value == null ? "Please select an auth method" : null,
+                            isExpanded: true,
+                            icon: const Icon(Icons.arrow_drop_down),
+                          ),
+                        ),
+                        SizedBox(height: _responsiveSpacing(context)),
+                        if (selectedAuthMethod != "Anonymous")
+                          _buildTextField(
+                            controller: secretController,
+                            labelText: _getSecretLabel(selectedAuthMethod),
+                            context: context,
+                            validator: (value) => value!.isEmpty ? "Please enter ${_getSecretLabel(selectedAuthMethod).toLowerCase()}" : null,
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -199,10 +395,11 @@ class ProfileController extends GetxController {
               TextButton(
                 onPressed: () async {
                   if (formKey.currentState!.validate()) {
-                    Get.back(); // Close the dialog first
+                    Get.back();
+                    final fullUri = "$selectedProtocol${uriController.text}:${portController.text}/ws";
                     final newProfile = ProfileModel(
                       name: nameController.text,
-                      url: urlController.text,
+                      uri: fullUri,
                       realm: realmController.text,
                       serializer: selectedSerializer,
                       authid: authidController.text,
@@ -224,5 +421,90 @@ class ProfileController extends GetxController {
       ),
       barrierDismissible: false,
     );
+  }
+
+  Widget _buildResponsiveFields({
+    required bool isDesktop,
+    required BuildContext context,
+    required Widget fieldOne,
+    required Widget fieldTwo,
+  }) {
+    if (isDesktop) {
+      return Row(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: _responsiveSpacing(context) / 2),
+              child: fieldOne,
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
+              child: fieldTwo,
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Column(
+        children: [
+          fieldOne,
+          SizedBox(height: _responsiveSpacing(context)),
+          fieldTwo,
+        ],
+      );
+    }
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required BuildContext context,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+    int? maxLength,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        isDense: true,
+        contentPadding: _responsivePadding(context),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        counterText: maxLength != null ? "" : null,
+      ),
+      keyboardType: keyboardType,
+      validator: validator,
+      maxLength: maxLength,
+    );
+  }
+
+  String _getSecretLabel(String authMethod) {
+    switch (authMethod) {
+      case "Ticket":
+        return "Ticket";
+      case "WAMP-CRA":
+        return "Secret";
+      case "CryptoSign":
+        return "Private Key";
+      default:
+        return "Secret";
+    }
+  }
+
+  EdgeInsets _responsivePadding(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    return EdgeInsets.symmetric(
+      vertical: screenWidth > 600 ? 12.0 : 8.0,
+      horizontal: screenWidth > 600 ? 16.0 : 12.0,
+    );
+  }
+
+  double _responsiveSpacing(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    return screenWidth > 600 ? 16.0 : 12.0;
   }
 }

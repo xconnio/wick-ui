@@ -39,7 +39,7 @@ mixin StorageManager {
         var section = "profile ${profile.name}";
         config
           ..addSection(section)
-          ..set(section, "url", profile.url)
+          ..set(section, "uri", profile.uri)
           ..set(section, "realm", profile.realm)
           ..set(section, "serializer", profile.serializer)
           ..set(section, "authmethod", profile.authmethod)
@@ -75,7 +75,7 @@ mixin StorageManager {
         return config.sections().map((section) {
           return ProfileModel(
             name: section.replaceFirst("profile ", ""),
-            url: config.get(section, "url") ?? "",
+            uri: config.get(section, "uri") ?? "",
             realm: config.get(section, "realm") ?? "",
             serializer: config.get(section, "serializer") ?? "",
             authmethod: config.get(section, "authmethod") ?? "",
