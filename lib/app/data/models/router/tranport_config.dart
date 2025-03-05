@@ -1,5 +1,3 @@
-import "package:flutter/foundation.dart";
-
 class TransportConfig {
   TransportConfig({
     required this.port,
@@ -21,6 +19,7 @@ class TransportConfig {
       serializers: List<String>.from(json["serializers"]),
     );
   }
+
   final String type;
   final int port;
   final List<String> serializers;
@@ -32,18 +31,4 @@ class TransportConfig {
       "serializers": serializers,
     };
   }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    return other is TransportConfig &&
-        other.type == type &&
-        other.port == port &&
-        listEquals(other.serializers, serializers);
-  }
-
-  @override
-  int get hashCode => type.hashCode ^ port.hashCode ^ serializers.hashCode;
 }
