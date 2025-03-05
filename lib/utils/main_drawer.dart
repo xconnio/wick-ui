@@ -42,6 +42,13 @@ class MainDrawer extends StatelessWidget {
               await Get.offAllNamed(AppRoutes.action);
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.route_rounded),
+            title: const Text("Router"),
+            onTap: () async {
+              await Get.offAllNamed(AppRoutes.router);
+            },
+          ),
         ],
       ),
     );
