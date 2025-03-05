@@ -151,7 +151,7 @@ class RouterController extends GetxController {
       activeRouters[realm.name] = server;
       runningRouters[realm.name] = true;
     } on Exception catch (e) {
-      Get.snackbar("Error", "Failed to start router '${realm.name}': $e");
+      Get.snackbar("Error", "Failed starting router '${realm.name}': $e");
     }
   }
 
