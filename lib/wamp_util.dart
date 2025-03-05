@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:wick_ui/utils/constants.dart";
 import "package:xconn/xconn.dart";
 
@@ -57,5 +59,7 @@ Future<Session> connect(
 Server startRouter(String host, int port, List<String> realms) {
   var r = Router();
   realms.forEach(r.addRealm);
-  return Server(r);
+  var server = Server(r);
+  unawaited(server.start(host, port));
+  return server;
 }
