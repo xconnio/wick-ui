@@ -74,11 +74,11 @@ class ActionView extends StatelessWidget {
   }
 
   Widget _buildUriBar(
-      int tabKey,
-      ActionController actionController,
-      ProfileController profileController,
-      TextEditingController uriController,
-      ) {
+    int tabKey,
+    ActionController actionController,
+    ProfileController profileController,
+    TextEditingController uriController,
+  ) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final bool isMobile =
         !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
@@ -94,38 +94,7 @@ class ActionView extends StatelessWidget {
         child: Column(
           children: isMobile
               ? [
-            TextFormField(
-              controller: uriController,
-              decoration: const InputDecoration(
-                labelText: "URI",
-                border: InputBorder.none,
-              ),
-              validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
-            ),
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildDropdown(tabKey, actionController, profileController),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: _buildWampMethodButton(tabKey, formKey, uriController),
-                ),
-              ],
-            ),
-          ]
-              : [
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildDropdown(tabKey, actionController, profileController),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 4,
-                  child: TextFormField(
+                  TextFormField(
                     controller: uriController,
                     decoration: const InputDecoration(
                       labelText: "URI",
@@ -133,14 +102,45 @@ class ActionView extends StatelessWidget {
                     ),
                     validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: _buildWampMethodButton(tabKey, formKey, uriController),
-                ),
-              ],
-            ),
-          ],
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _buildDropdown(tabKey, actionController, profileController),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: _buildWampMethodButton(tabKey, formKey, uriController),
+                      ),
+                    ],
+                  ),
+                ]
+              : [
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _buildDropdown(tabKey, actionController, profileController),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 4,
+                        child: TextFormField(
+                          controller: uriController,
+                          decoration: const InputDecoration(
+                            labelText: "URI",
+                            border: InputBorder.none,
+                          ),
+                          validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: _buildWampMethodButton(tabKey, formKey, uriController),
+                      ),
+                    ],
+                  ),
+                ],
         ),
       ),
     );
@@ -368,9 +368,8 @@ class ActionView extends StatelessWidget {
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete),
-                              onPressed: kwargsController.tableData.length > 1
-                                  ? () => kwargsController.removeRow(i)
-                                  : null,
+                              onPressed:
+                                  kwargsController.tableData.length > 1 ? () => kwargsController.removeRow(i) : null,
                             ),
                           ],
                         ),

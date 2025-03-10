@@ -23,11 +23,11 @@ class ActionController extends GetxController {
   }
 
   Future<void> performAction(
-      String actionType,
-      String uri,
-      List<String> args,
-      Map<String, String> kwArgs,
-      ) async {
+    String actionType,
+    String uri,
+    List<String> args,
+    Map<String, String> kwArgs,
+  ) async {
     if (selectedProfile.value != null) {
       try {
         Logs result;
@@ -78,10 +78,10 @@ class ActionController extends GetxController {
   }
 
   Future<Logs> performCallAction(
-      String uri,
-      List<String> args,
-      Map<String, String> kwArgs,
-      ) async {
+    String uri,
+    List<String> args,
+    Map<String, String> kwArgs,
+  ) async {
     try {
       final session = await SessionManager.connect(selectedProfile.value!);
       final result = await session.call(uri, args: args, kwargs: kwArgs);
@@ -120,10 +120,10 @@ class ActionController extends GetxController {
   }
 
   Future<Logs> performPublishAction(
-      String uri,
-      List<String> args,
-      Map<String, String> kwArgs,
-      ) async {
+    String uri,
+    List<String> args,
+    Map<String, String> kwArgs,
+  ) async {
     try {
       final session = await SessionManager.connect(selectedProfile.value!);
       await session.publish(uri, args: args, kwargs: kwArgs);
