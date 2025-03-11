@@ -35,29 +35,25 @@ class ActionView extends StatelessWidget {
       ..put(KwargsController(), tag: "kwargs_$tabKey");
     final ActionController actionController = Get.put(ActionController(), tag: "action_$tabKey");
     final ProfileController profileController = Get.put(ProfileController(), tag: "profile_$tabKey");
+    final TextEditingController uriController = TextEditingController(); // Moved here
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildUriBar(tabKey, actionController, profileController),
+          _buildUriBar(tabKey, actionController, profileController, uriController),
           const SizedBox(height: 4),
           _buildLogsWindow(tabKey),
           Expanded(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
                 if (constraints.maxWidth >= 800) {
-                  // Desktop/Web layout
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _buildArgsTab(tabKey),
-                      ),
-                      Expanded(
-                        child: _buildKwargsTab(tabKey),
-                      ),
+                      Expanded(child: _buildArgsTab(tabKey)),
+                      Expanded(child: _buildKwargsTab(tabKey)),
                     ],
                   );
                 } else {
@@ -81,8 +77,8 @@ class ActionView extends StatelessWidget {
     int tabKey,
     ActionController actionController,
     ProfileController profileController,
+    TextEditingController uriController,
   ) {
-    final TextEditingController uriController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final bool isMobile =
         !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
@@ -110,18 +106,11 @@ class ActionView extends StatelessWidget {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: _buildDropdown(
-                          tabKey,
-                          actionController,
-                          profileController,
-                        ),
+                        child: _buildDropdown(tabKey, actionController, profileController),
                       ),
                       Expanded(
                         flex: 2,
-                        child: _buildWampMethodButton(
-                          tabKey,
-                          formKey,
-                        ),
+                        child: _buildWampMethodButton(tabKey, formKey, uriController),
                       ),
                     ],
                   ),
@@ -131,11 +120,7 @@ class ActionView extends StatelessWidget {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: _buildDropdown(
-                          tabKey,
-                          actionController,
-                          profileController,
-                        ),
+                        child: _buildDropdown(tabKey, actionController, profileController),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -151,7 +136,7 @@ class ActionView extends StatelessWidget {
                       ),
                       Expanded(
                         flex: 2,
-                        child: _buildWampMethodButton(tabKey, formKey),
+                        child: _buildWampMethodButton(tabKey, formKey, uriController),
                       ),
                     ],
                   ),
@@ -161,11 +146,7 @@ class ActionView extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdown(
-    int tabKey,
-    ActionController actionController,
-    ProfileController profileController,
-  ) {
+  Widget _buildDropdown(int tabKey, ActionController actionController, ProfileController profileController) {
     return Obx(() {
       return DropdownButtonFormField<ProfileModel>(
         isExpanded: true,
@@ -185,11 +166,10 @@ class ActionView extends StatelessWidget {
     });
   }
 
-  Widget _buildWampMethodButton(int tabKey, GlobalKey<FormState> formKey) {
+  Widget _buildWampMethodButton(int tabKey, GlobalKey<FormState> formKey, TextEditingController uriController) {
     final ActionController actionController = Get.find<ActionController>(tag: "action_$tabKey");
     final ArgsController argsController = Get.find<ArgsController>(tag: "args_$tabKey");
     final KwargsController kwargsController = Get.find<KwargsController>(tag: "kwargs_$tabKey");
-    final TextEditingController uriController = TextEditingController();
 
     return Obx(() {
       return DecoratedBox(
@@ -227,10 +207,7 @@ class ActionView extends StatelessWidget {
                         actionController.selectedWampMethod.value.isNotEmpty
                             ? actionController.selectedWampMethod.value
                             : wampMethods.first,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
