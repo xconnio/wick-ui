@@ -62,6 +62,7 @@ class ProfileController extends GetxController {
     }
   }
 
+
   Future<void> createProfile({ProfileModel? profile}) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: profile?.name ?? "");
@@ -77,13 +78,14 @@ class ProfileController extends GetxController {
     final authidController = TextEditingController(text: profile?.authid ?? "");
     final secretController = TextEditingController(text: profile?.secret ?? "");
 
-    final serializers = ["JSON", "MsgPack", "CBOR"];
-    final authMethods = ["Anonymous", "Ticket", "WAMP-CRA", "CryptoSign"];
+
+    final serializers = ["json", "msgpack", "cbor"];
+    final authMethods = ["anonymous", "ticket", "wamp-cra", "cryptoSign"];
 
     var selectedSerializer =
-        serializers.contains(profile?.serializer) ? profile?.serializer ?? serializers.first : serializers.first;
+    serializers.contains(profile?.serializer) ? profile?.serializer ?? serializers.first : serializers.first;
     var selectedAuthMethod =
-        authMethods.contains(profile?.authmethod) ? profile?.authmethod ?? authMethods.first : authMethods.first;
+    authMethods.contains(profile?.authmethod) ? profile?.authmethod ?? authMethods.first : authMethods.first;
     var selectedProtocol = (profile?.uri.startsWith("wss://") ?? false) ? "wss://" : "ws://";
 
     await Get.dialog(
@@ -91,7 +93,7 @@ class ProfileController extends GetxController {
         builder: (context, setState) {
           bool isDesktop = MediaQuery.of(context).size.width > 600;
           double dialogWidth =
-              isDesktop ? MediaQuery.of(context).size.width * 0.6 : MediaQuery.of(context).size.width * 0.9;
+          isDesktop ? MediaQuery.of(context).size.width * 0.6 : MediaQuery.of(context).size.width * 0.9;
 
           return AlertDialog(
             title: Text(profile == null ? "Create Profile" : "Update Profile"),
@@ -108,16 +110,16 @@ class ProfileController extends GetxController {
                       children: [
                         _buildTextField(
                           controller: nameController,
-                          labelText: "Name",
+                          labelText: "profile name",
                           context: context,
                           validator: (value) {
                             if (value!.isEmpty) {
-                              return "Please enter a name";
+                              return "please enter a name";
                             }
                             if (profiles.any(
-                              (p) => p.name == value && p.name != profile?.name,
+                                  (p) => p.name == value && p.name != profile?.name,
                             )) {
-                              return "Name already exists. Choose a different name.";
+                              return "profile name already exists. choose a different name.";
                             }
                             return null;
                           },
@@ -164,11 +166,11 @@ class ProfileController extends GetxController {
                                   padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
                                   child: _buildTextField(
                                     controller: uriController,
-                                    labelText: "URI",
+                                    labelText: "uri",
                                     context: context,
                                     validator: (value) {
                                       if (value!.isEmpty) {
-                                        return "Please enter a URI";
+                                        return "please enter a uri";
                                       }
                                       return null;
                                     },
@@ -182,15 +184,15 @@ class ProfileController extends GetxController {
                                     width: 100,
                                     child: _buildTextField(
                                       controller: portController,
-                                      labelText: "Port",
+                                      labelText: "port",
                                       context: context,
                                       keyboardType: TextInputType.number,
                                       validator: (value) {
                                         if (value!.isEmpty) {
-                                          return "Please enter a port";
+                                          return "please enter a port";
                                         }
                                         if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                                          return "Invalid port";
+                                          return "invalid port";
                                         }
                                         return null;
                                       },
@@ -253,11 +255,11 @@ class ProfileController extends GetxController {
                                     flex: 3,
                                     child: _buildTextField(
                                       controller: uriController,
-                                      labelText: "URI",
+                                      labelText: "uri",
                                       context: context,
                                       validator: (value) {
                                         if (value!.isEmpty) {
-                                          return "Please enter a URI";
+                                          return "please enter a uri";
                                         }
                                         return null;
                                       },
@@ -269,7 +271,7 @@ class ProfileController extends GetxController {
                                       width: 100,
                                       child: _buildTextField(
                                         controller: portController,
-                                        labelText: "Port",
+                                        labelText: "port",
                                         context: context,
                                         keyboardType: TextInputType.number,
                                         validator: (value) {
@@ -277,7 +279,7 @@ class ProfileController extends GetxController {
                                             return "Please enter a port";
                                           }
                                           if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                                            return "Invalid port";
+                                            return "invalid port";
                                           }
                                           return null;
                                         },
@@ -299,14 +301,14 @@ class ProfileController extends GetxController {
                           context: context,
                           fieldOne: _buildTextField(
                             controller: realmController,
-                            labelText: "Realm",
+                            labelText: "realm",
                             context: context,
                             validator: (value) => value!.isEmpty ? "Please enter a realm" : null,
                           ),
                           fieldTwo: DropdownButtonFormField<String>(
                             value: selectedSerializer,
                             decoration: InputDecoration(
-                              labelText: "Serializer",
+                              labelText: "serializer",
                               isDense: true,
                               contentPadding: _responsivePadding(context),
                               border: OutlineInputBorder(
@@ -324,7 +326,7 @@ class ProfileController extends GetxController {
                                 selectedSerializer = value!;
                               });
                             },
-                            validator: (value) => value == null ? "Please select a serializer" : null,
+                            validator: (value) => value == null ? "please select a serializer" : null,
                             isExpanded: true,
                             icon: const Icon(Icons.arrow_drop_down),
                           ),
@@ -335,11 +337,11 @@ class ProfileController extends GetxController {
                           context: context,
                           fieldOne: _buildTextField(
                             controller: authidController,
-                            labelText: "Auth ID",
+                            labelText: "auth id",
                             context: context,
                             validator: (value) {
-                              if (selectedAuthMethod != "Anonymous" && (value == null || value.isEmpty)) {
-                                return "Please enter an Auth ID";
+                              if (selectedAuthMethod != "anonymous" && (value == null || value.isEmpty)) {
+                                return "please enter an auth id";
                               }
                               return null;
                             },
@@ -347,7 +349,7 @@ class ProfileController extends GetxController {
                           fieldTwo: DropdownButtonFormField<String>(
                             value: selectedAuthMethod,
                             decoration: InputDecoration(
-                              labelText: "Auth Method",
+                              labelText: "auth method",
                               isDense: true,
                               contentPadding: _responsivePadding(context),
                               border: OutlineInputBorder(
@@ -366,21 +368,25 @@ class ProfileController extends GetxController {
                                 secretController.clear();
                               });
                             },
-                            validator: (value) => value == null ? "Please select an auth method" : null,
+                            validator: (value) => value == null ? "please select an auth method" : null,
                             isExpanded: true,
                             icon: const Icon(Icons.arrow_drop_down),
                           ),
                         ),
                         SizedBox(height: _responsiveSpacing(context)),
-                        if (selectedAuthMethod != "Anonymous")
+                        if (selectedAuthMethod != "anonymous")
                           _buildTextField(
                             controller: secretController,
                             labelText: _getSecretLabel(selectedAuthMethod),
                             context: context,
-                            validator: (value) => value!.isEmpty
-                                ? "Please enter ${_getSecretLabel(selectedAuthMethod).toLowerCase()}"
-                                : null,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return "please enter ${_getSecretLabel(selectedAuthMethod).toLowerCase()}";
+                              }
+                              return null;
+                            },
                           ),
+
                       ],
                     ),
                   ),
@@ -479,19 +485,27 @@ class ProfileController extends GetxController {
       keyboardType: keyboardType,
       validator: validator,
       maxLength: maxLength,
+      onChanged: (text) {
+        controller.value = controller.value.copyWith(
+          text: text.toLowerCase(),
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      },
     );
   }
 
+
+
   String _getSecretLabel(String authMethod) {
     switch (authMethod) {
-      case "Ticket":
-        return "Ticket";
-      case "WAMP-CRA":
-        return "Secret";
-      case "CryptoSign":
-        return "Private Key";
+      case "ticket":
+        return "ticket";
+      case "wamp-cra":
+        return "secret";
+      case "cryptoSign":
+        return "private key";
       default:
-        return "Secret";
+        return "";
     }
   }
 
