@@ -62,7 +62,6 @@ class ProfileController extends GetxController {
     }
   }
 
-
   Future<void> createProfile({ProfileModel? profile}) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: profile?.name ?? "");
@@ -78,14 +77,13 @@ class ProfileController extends GetxController {
     final authidController = TextEditingController(text: profile?.authid ?? "");
     final secretController = TextEditingController(text: profile?.secret ?? "");
 
-
     final serializers = ["json", "msgpack", "cbor"];
     final authMethods = ["anonymous", "ticket", "wamp-cra", "cryptoSign"];
 
     var selectedSerializer =
-    serializers.contains(profile?.serializer) ? profile?.serializer ?? serializers.first : serializers.first;
+        serializers.contains(profile?.serializer) ? profile?.serializer ?? serializers.first : serializers.first;
     var selectedAuthMethod =
-    authMethods.contains(profile?.authmethod) ? profile?.authmethod ?? authMethods.first : authMethods.first;
+        authMethods.contains(profile?.authmethod) ? profile?.authmethod ?? authMethods.first : authMethods.first;
     var selectedProtocol = (profile?.uri.startsWith("wss://") ?? false) ? "wss://" : "ws://";
 
     await Get.dialog(
@@ -93,7 +91,7 @@ class ProfileController extends GetxController {
         builder: (context, setState) {
           bool isDesktop = MediaQuery.of(context).size.width > 600;
           double dialogWidth =
-          isDesktop ? MediaQuery.of(context).size.width * 0.6 : MediaQuery.of(context).size.width * 0.9;
+              isDesktop ? MediaQuery.of(context).size.width * 0.6 : MediaQuery.of(context).size.width * 0.9;
 
           return AlertDialog(
             title: Text(profile == null ? "Create Profile" : "Update Profile"),
@@ -117,7 +115,7 @@ class ProfileController extends GetxController {
                               return "please enter a name";
                             }
                             if (profiles.any(
-                                  (p) => p.name == value && p.name != profile?.name,
+                              (p) => p.name == value && p.name != profile?.name,
                             )) {
                               return "profile name already exists. choose a different name.";
                             }
@@ -386,7 +384,6 @@ class ProfileController extends GetxController {
                               return null;
                             },
                           ),
-
                       ],
                     ),
                   ),
@@ -493,8 +490,6 @@ class ProfileController extends GetxController {
       },
     );
   }
-
-
 
   String _getSecretLabel(String authMethod) {
     switch (authMethod) {
