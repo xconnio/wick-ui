@@ -77,7 +77,7 @@ class ProfileController extends GetxController {
     final authidController = TextEditingController(text: profile?.authid ?? "");
     final secretController = TextEditingController(text: profile?.secret ?? "");
 
-    final serializers = ["JSON", "MSGPACK", "CBOR"];
+    final serializers = ["json", "msgpack", "cbor"];
     final authMethods = ["anonymous", "ticket", "wamp-cra", "cryptoSign"];
 
     var selectedSerializer =

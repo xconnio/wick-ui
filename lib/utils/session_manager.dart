@@ -6,22 +6,22 @@ mixin SessionManager {
     var serializer = _getSerializer(profile.serializer);
 
     Client client;
-    if (profile.authmethod == "Ticket") {
+    if (profile.authmethod == "ticket") {
       client = Client(
         serializer: serializer,
         authenticator: TicketAuthenticator(profile.authid, {}, profile.secret),
       );
-    } else if (profile.authmethod == "WAMP-CRA") {
+    } else if (profile.authmethod == "wamp-cra") {
       client = Client(
         serializer: serializer,
         authenticator: WAMPCRAAuthenticator(profile.authid, {}, profile.secret),
       );
-    } else if (profile.authmethod == "CryptoSign") {
+    } else if (profile.authmethod == "cryptoSign") {
       client = Client(
         serializer: serializer,
         authenticator: CryptoSignAuthenticator(profile.authid, {}, profile.secret),
       );
-    } else if (profile.authmethod == "Anonymous") {
+    } else if (profile.authmethod == "anonymous") {
       client = Client(
         serializer: serializer,
         authenticator: AnonymousAuthenticator(profile.authid),
@@ -35,11 +35,11 @@ mixin SessionManager {
 
   static Serializer _getSerializer(String? serializerString) {
     switch (serializerString) {
-      case "JSON":
+      case "json":
         return JSONSerializer();
-      case "CBOR":
+      case "cbor":
         return CBORSerializer();
-      case "MsgPack":
+      case "msgpack":
         return MsgPackSerializer();
       default:
         throw Exception("Invalid serializer $serializerString");
