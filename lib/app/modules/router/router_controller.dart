@@ -35,6 +35,7 @@ class RouterController extends GetxController with StateManager {
     log("RouterController: Cleanup completed");
     super.onClose();
   }
+
   Future<void> loadRouterConfigs() async {
     try {
       final directory = await getApplicationDocumentsDirectory();
