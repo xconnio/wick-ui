@@ -1,6 +1,6 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-import "package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart";
+import "package:get/get.dart";
 import "package:wick_ui/app/modules/router/router_controller.dart";
 import "package:wick_ui/utils/infow_row.dart";
 import "package:wick_ui/utils/status_indicator.dart";
@@ -18,8 +18,8 @@ class RouterCard extends StatelessWidget {
     required this.onToggle,
     required this.onDelete,
   }) : super(key: key);
-  final RouterController controller;
 
+  final RouterController controller;
   final String realmName;
   final String status;
   final String port;
