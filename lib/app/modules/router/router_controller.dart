@@ -1,3 +1,4 @@
+import "dart:developer";
 import "dart:io";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
@@ -7,20 +8,135 @@ import "package:wick_ui/app/data/models/authenticator/authenticator_config.dart"
 import "package:wick_ui/app/data/models/router/realm_config.dart";
 import "package:wick_ui/app/data/models/router/router_config_model.dart";
 import "package:wick_ui/app/data/models/router/tranport_config.dart";
+import "package:wick_ui/utils/state_manager.dart";
 import "package:wick_ui/wamp_util.dart";
 import "package:xconn/xconn.dart";
 import "package:yaml/yaml.dart";
 import "package:yaml_writer/yaml_writer.dart";
 
-class RouterController extends GetxController {
+class RouterController extends GetxController with StateManager {
   RxList<RouterConfigModel> routerConfigs = <RouterConfigModel>[].obs;
-  RxMap<String, bool> runningRouters = <String, bool>{}.obs;
   final Map<String, Server> activeRouters = {};
 
   @override
   Future<void> onInit() async {
     super.onInit();
+    log("RouterController: onInit called");
+    await initializeState();
     await loadRouterConfigs();
+    await restoreRunningRouters();
+  }
+
+  @override
+  Future<void> onClose() async {
+    log("RouterController: onClose called");
+    await stopAllRouters();
+    await cleanupState();
+    log("RouterController: Cleanup completed");
+    super.onClose();
+  }
+
+  Future<void> loadRouterConfigs() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final files = await directory.list().where((file) => file is File && file.path.endsWith(".yaml")).toList();
+
+      routerConfigs.clear();
+
+      for (final file in files) {
+        if (file is File && path.basename(file.path).startsWith("router_config")) {
+          final yamlString = await file.readAsString();
+          final yamlMap = loadYaml(yamlString);
+          final configMap = yamlToMap(yamlMap);
+
+          final config = RouterConfigModel.fromJson(configMap);
+          routerConfigs.add(config);
+
+          for (final realm in config.realms) {
+            if (!runningRouters.containsKey(realm.name)) {
+              runningRouters[realm.name] = false;
+            }
+          }
+        }
+      }
+      log("RouterController: Loaded ${routerConfigs.length} router configs");
+    } on Exception catch (e) {
+      log("RouterController: Load failed: $e");
+    }
+  }
+
+  Future<void> restoreRunningRouters() async {
+    log("RouterController: Restoring running routers");
+    for (final config in routerConfigs) {
+      for (final realm in config.realms) {
+        if ((runningRouters[realm.name] ?? false) && activeRouters[realm.name] == null) {
+          try {
+            final transport = config.transports.first;
+            final server = startRouter("localhost", transport.port, [realm.name]);
+            activeRouters[realm.name] = server;
+            log(
+              "RouterController: Restored router '${realm.name}' on port ${transport.port}",
+            );
+          } on Exception catch (e) {
+            runningRouters[realm.name] = false;
+            log(
+              "RouterController: Failed to restore router '${realm.name}': $e",
+            );
+          }
+        }
+      }
+    }
+  }
+
+  Future<void> runRouter(RealmConfig realm) async {
+    try {
+      final config = routerConfigs.firstWhere((c) => c.realms.contains(realm));
+      final transport = config.transports.first;
+      if (runningRouters[realm.name] ?? false) {
+        log("RouterController: Router '${realm.name}' already running");
+        return;
+      }
+      final server = startRouter("localhost", transport.port, [realm.name]);
+      activeRouters[realm.name] = server;
+      runningRouters[realm.name] = true;
+      await saveRouterState();
+      log(
+        "RouterController: Started router '${realm.name}' on port ${transport.port}",
+      );
+    } on Exception catch (e) {
+      log("RouterController: Failed to start router '${realm.name}': $e");
+    }
+  }
+
+  Future<void> stopRouter(String realmName) async {
+    try {
+      final server = activeRouters[realmName];
+      if (server != null) {
+        await server.close();
+        activeRouters.remove(realmName);
+        runningRouters[realmName] = false;
+        await saveRouterState();
+        log("RouterController: Stopped router '$realmName'");
+      }
+    } on Exception catch (e) {
+      log("RouterController: Failed to stop router '$realmName': $e");
+    }
+  }
+
+  Future<void> stopAllRouters() async {
+    log("RouterController: Stopping all routers");
+    try {
+      for (final server in activeRouters.values) {
+        await server.close();
+        log("RouterController: Closed a server");
+      }
+      activeRouters.clear();
+      runningRouters.updateAll((key, value) => false);
+      await clearRouterState();
+      log("RouterController: All routers stopped and state cleared");
+    } on Exception catch (e) {
+      log("RouterController: Failed to stop all routers: $e");
+    }
   }
 
   Map<String, dynamic> yamlToMap(YamlMap yaml) {
@@ -49,37 +165,6 @@ class RouterController extends GetxController {
     }).toList();
   }
 
-  Future<void> loadRouterConfigs() async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final files = await directory.list().where((file) => file is File && file.path.endsWith(".yaml")).toList();
-
-      routerConfigs.clear();
-
-      for (final file in files) {
-        if (file is File && path.basename(file.path).startsWith("router_config")) {
-          final yamlString = await file.readAsString();
-          final yamlMap = loadYaml(yamlString);
-          final configMap = yamlToMap(yamlMap);
-
-          final config = RouterConfigModel.fromJson(configMap);
-          routerConfigs.add(config);
-
-          for (final realm in config.realms) {
-            runningRouters[realm.name] = false;
-          }
-        }
-      }
-    } on Exception catch (e) {
-      Get.snackbar(
-        "Error",
-        "Load failed: $e",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
-
   Future<void> saveRouterConfig(RouterConfigModel config) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
@@ -91,13 +176,9 @@ class RouterController extends GetxController {
       routerConfigs
         ..add(config)
         ..refresh();
+      log("RouterController: Saved router config: ${file.path}");
     } on Exception catch (e) {
-      Get.snackbar(
-        "Error",
-        "Save failed: $e",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      log("RouterController: Save failed: $e");
     }
   }
 
@@ -111,13 +192,9 @@ class RouterController extends GetxController {
 
       routerConfigs[index] = config;
       routerConfigs.refresh();
+      log("RouterController: Updated router config at index $index");
     } on Exception catch (e) {
-      Get.snackbar(
-        "Error",
-        "Update failed: $e",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      log("RouterController: Update failed: $e");
     }
   }
 
@@ -131,44 +208,16 @@ class RouterController extends GetxController {
       routerConfigs
         ..removeAt(index)
         ..refresh();
+      log("RouterController: Deleted router config at index $index");
     } on Exception catch (e) {
-      Get.snackbar(
-        "Error",
-        "Delete failed: $e",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      log("RouterController: Delete failed: $e");
     }
   }
 
-  Future<void> runRouter(RealmConfig realm) async {
-    try {
-      final transport = routerConfigs.first.transports.first;
-      if (runningRouters[realm.name] ?? false) {
-        return;
-      }
-      final server = startRouter("localhost", transport.port, [realm.name]);
-      activeRouters[realm.name] = server;
-      runningRouters[realm.name] = true;
-    } on Exception catch (e) {
-      Get.snackbar("Error", "Failed starting router '${realm.name}': $e");
-    }
-  }
-
-  Future<void> stopRouter(String realmName) async {
-    try {
-      final server = activeRouters[realmName];
-      if (server != null) {
-        await server.close();
-        activeRouters.remove(realmName);
-        runningRouters[realmName] = false;
-      }
-    } on Exception catch (e) {
-      Get.snackbar("Error", "Failed to stop router '$realmName': $e");
-    }
-  }
-
-  Future<void> createRouterConfig({RouterConfigModel? configToEdit, int? index}) async {
+  Future<void> createRouterConfig({
+    RouterConfigModel? configToEdit,
+    int? index,
+  }) async {
     final formKey = GlobalKey<FormState>();
     final config = configToEdit ?? (index != null ? routerConfigs[index] : null);
 
@@ -197,7 +246,9 @@ class RouterController extends GetxController {
               isDesktop ? MediaQuery.of(context).size.width * 0.6 : MediaQuery.of(context).size.width * 0.9;
 
           return AlertDialog(
-            title: Text(configToEdit == null && index == null ? "Create New Router" : "Edit Router Config"),
+            title: Text(
+              configToEdit == null && index == null ? "Create New Router" : "Edit Router Config",
+            ),
             content: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
               child: SizedBox(
@@ -246,7 +297,10 @@ class RouterController extends GetxController {
                             () => Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text("Serializers", style: TextStyle(fontSize: 16)),
+                                const Text(
+                                  "Serializers",
+                                  style: TextStyle(fontSize: 16),
+                                ),
                                 ...selectedSerializers.entries.map((entry) {
                                   return CheckboxListTile(
                                     title: Text(entry.key),

@@ -61,8 +61,6 @@ class RouterView extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(
-      DiagnosticsProperty<RouterController>("controller", controller),
-    );
+    properties.add(DiagnosticsProperty<RouterController>("controller", controller));
   }
 }
