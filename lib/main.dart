@@ -1,9 +1,11 @@
 import "package:flutter/material.dart";
 import "package:get/get.dart";
+import "package:wick_ui/app/modules/router/router_controller.dart";
 import "package:wick_ui/app/routes/app_pages.dart";
 import "package:wick_ui/app/routes/app_routes.dart";
 
 void main() {
+  Get.put(RouterController(), permanent: true);
   runApp(const MyApp());
 }
 
