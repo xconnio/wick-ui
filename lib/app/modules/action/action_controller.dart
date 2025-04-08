@@ -1,9 +1,10 @@
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/profile_model.dart";
 import "package:wick_ui/utils/session_manager.dart";
+import "package:wick_ui/utils/state_manager.dart";
 import "package:xconn/xconn.dart";
 
-class ActionController extends GetxController {
+class ActionController extends GetxController with StateManager, SessionManager {
   Rx<ProfileModel?> selectedProfile = Rx<ProfileModel?>(null);
   RxString uri = "".obs;
   RxString selectedWampMethod = "".obs;

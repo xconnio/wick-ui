@@ -29,7 +29,7 @@ class ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isConnected = controller.connectedProfiles.contains(profile);
+      final isConnected = controller.profileSessions[profile.name] ?? false;
       return Card(
         elevation: 2,
         margin: const EdgeInsets.symmetric(vertical: 4),
@@ -107,7 +107,7 @@ class ProfileCard extends StatelessWidget {
                       ),
                       Switch.adaptive(
                         value: isConnected,
-                        onChanged: (value) async => controller.toggleConnection(profile),
+                        onChanged: (value) => onToggle(),
                       ),
                     ],
                   ),
