@@ -1,32 +1,39 @@
+import "dart:developer";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/profile_model.dart";
 import "package:wick_ui/utils/session_manager.dart";
+import "package:wick_ui/utils/state_manager.dart";
 import "package:wick_ui/utils/storage_manager.dart";
 
-class ProfileController extends GetxController {
+class ProfileController extends GetxController with StateManager, SessionManager {
   RxList<ProfileModel> profiles = <ProfileModel>[].obs;
-  RxList<ProfileModel> connectedProfiles = <ProfileModel>[].obs;
   RxList<ProfileModel> connectingProfiles = <ProfileModel>[].obs;
   RxMap<String, String> errorMessages = <String, String>{}.obs;
 
   @override
   Future<void> onInit() async {
     super.onInit();
+    log("ProfileController: onInit called");
+    await initializeState();
     await loadProfiles();
+    await restoreSessions(profiles);
   }
 
   Future<void> saveProfiles() async {
     await StorageManager.saveProfiles(profiles.toList());
+    log("ProfileController: Saved profiles");
   }
 
   Future<void> loadProfiles() async {
     profiles.assignAll(await StorageManager.loadProfiles());
+    log("ProfileController: Loaded ${profiles.length} profiles");
   }
 
   Future<void> addProfile(ProfileModel profile) async {
     profiles.add(profile);
     await saveProfiles();
+    log("ProfileController: Added profile '${profile.name}'");
   }
 
   Future<void> updateProfile(ProfileModel updatedProfile) async {
@@ -34,32 +41,48 @@ class ProfileController extends GetxController {
     if (index != -1) {
       profiles[index] = updatedProfile;
       await saveProfiles();
+      log("ProfileController: Updated profile '${updatedProfile.name}'");
     }
   }
 
   Future<void> deleteProfile(ProfileModel profile) async {
     profiles.removeWhere((p) => p.name == profile.name);
-    connectedProfiles.remove(profile);
+    if (isConnected(profile)) {
+      await disconnect(profile);
+    }
     connectingProfiles.remove(profile);
     errorMessages.remove(profile.name);
     await saveProfiles();
+    await saveProfileState();
+    log("ProfileController: Deleted profile '${profile.name}'");
   }
 
   Future<void> toggleConnection(ProfileModel profile) async {
     errorMessages.remove(profile.name);
-    if (connectedProfiles.contains(profile)) {
-      connectedProfiles.remove(profile);
+    if (isConnected(profile)) {
+      await disconnect(profile);
+      log("ProfileController: Disconnected '${profile.name}'");
     } else {
       connectingProfiles.add(profile);
       try {
-        await SessionManager.connect(profile);
-        connectedProfiles.add(profile);
+        await connectProfile(profile);
+        log("ProfileController: Connected '${profile.name}'");
       } on Exception catch (e) {
         errorMessages[profile.name] = e.toString();
+        profileSessions[profile.name] = false;
+        await saveProfileState();
+        log("ProfileController: Failed to connect '${profile.name}': $e");
       } finally {
         connectingProfiles.remove(profile);
+        update();
       }
     }
+  }
+
+  Future<void> disconnectAllProfiles() async {
+    log("ProfileController: Disconnecting all profiles");
+    await clearAllSessions();
+    log("ProfileController: All profiles disconnected and state cleared");
   }
 
   Future<void> createProfile({ProfileModel? profile}) async {
@@ -114,9 +137,7 @@ class ProfileController extends GetxController {
                             if (value!.isEmpty) {
                               return "please enter a name";
                             }
-                            if (profiles.any(
-                              (p) => p.name == value && p.name != profile?.name,
-                            )) {
+                            if (profiles.any((p) => p.name == value && p.name != profile?.name)) {
                               return "profile name already exists. choose a different name.";
                             }
                             return null;
@@ -411,9 +432,11 @@ class ProfileController extends GetxController {
                     );
                     if (profile == null) {
                       await addProfile(newProfile);
+                      await toggleConnection(newProfile);
                     } else {
                       await updateProfile(newProfile);
                     }
+                    update();
                   }
                 },
                 child: const Text("Save"),
