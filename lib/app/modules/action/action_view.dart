@@ -7,6 +7,7 @@ import "package:wick_ui/app/modules/profile/profile_controller.dart";
 import "package:wick_ui/utils/args_controller.dart";
 import "package:wick_ui/utils/kwargs_controller.dart";
 import "package:wick_ui/utils/responsive_scaffold.dart";
+import "package:wick_ui/utils/status_indicator.dart";
 import "package:wick_ui/utils/tab_container_state.dart";
 
 class ActionView extends StatelessWidget {
@@ -34,8 +35,8 @@ class ActionView extends StatelessWidget {
       ..put(ArgsController(), tag: "args_$tabKey")
       ..put(KwargsController(), tag: "kwargs_$tabKey");
     final ActionController actionController = Get.put(ActionController(), tag: "action_$tabKey");
-    final ProfileController profileController = Get.put(ProfileController(), tag: "profile_$tabKey");
-    final TextEditingController uriController = TextEditingController(); // Moved here
+    final ProfileController profileController = Get.find<ProfileController>();
+    final TextEditingController uriController = TextEditingController();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -159,7 +160,20 @@ class ActionView extends StatelessWidget {
         items: profileController.profiles.map((ProfileModel profile) {
           return DropdownMenuItem<ProfileModel>(
             value: profile,
-            child: Text(profile.name),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    profile.name,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                StatusIndicator(
+                  isActive: profileController.profileSessions[profile.name] ?? false,
+                ),
+              ],
+            ),
           );
         }).toList(),
       );

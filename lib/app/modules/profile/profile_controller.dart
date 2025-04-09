@@ -65,7 +65,7 @@ class ProfileController extends GetxController with StateManager, SessionManager
     } else {
       connectingProfiles.add(profile);
       try {
-        await connectProfile(profile);
+        await connect(profile);
         log("ProfileController: Connected '${profile.name}'");
       } on Exception catch (e) {
         errorMessages[profile.name] = e.toString();

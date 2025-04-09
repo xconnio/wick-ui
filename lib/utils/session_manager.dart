@@ -4,40 +4,9 @@ import "package:wick_ui/utils/state_manager.dart";
 import "package:xconn/xconn.dart";
 
 mixin SessionManager on StateManager {
-  static final Map<String, Session> activeSessions = {};
+  final Map<String, Session> activeSessions = {};
 
-  static Future<Session> connect(ProfileModel profile) async {
-    var serializer = _getSerializer(profile.serializer);
-
-    Client client;
-    if (profile.authmethod == "ticket") {
-      client = Client(
-        serializer: serializer,
-        authenticator: TicketAuthenticator(profile.authid, {}, profile.secret),
-      );
-    } else if (profile.authmethod == "wamp-cra") {
-      client = Client(
-        serializer: serializer,
-        authenticator: WAMPCRAAuthenticator(profile.authid, {}, profile.secret),
-      );
-    } else if (profile.authmethod == "cryptoSign") {
-      client = Client(
-        serializer: serializer,
-        authenticator: CryptoSignAuthenticator(profile.authid, {}, profile.secret),
-      );
-    } else if (profile.authmethod == "anonymous") {
-      client = Client(
-        serializer: serializer,
-        authenticator: AnonymousAuthenticator(profile.authid),
-      );
-    } else {
-      client = Client(serializer: serializer);
-    }
-
-    return client.connect(profile.uri, profile.realm);
-  }
-
-  Future<Session> connectProfile(ProfileModel profile) async {
+  Future<Session> connect(ProfileModel profile) async {
     if (activeSessions.containsKey(profile.name)) {
       log("SessionManager: Session for '${profile.name}' already active");
       return activeSessions[profile.name]!;
@@ -121,7 +90,7 @@ mixin SessionManager on StateManager {
     for (final profile in profiles) {
       if ((profileSessions[profile.name] ?? false) && !activeSessions.containsKey(profile.name)) {
         try {
-          await connectProfile(profile);
+          await connect(profile);
           log("SessionManager: Restored session for '${profile.name}'");
         } on Exception catch (e) {
           profileSessions[profile.name] = false;
