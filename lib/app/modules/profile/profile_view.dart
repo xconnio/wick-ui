@@ -12,6 +12,8 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    controller.refreshSessions();
+
     return ResponsiveScaffold(
       title: "Profiles",
       body: Obx(() {
