@@ -40,13 +40,12 @@ class ActionView extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildUriBar(tabKey, actionController, profileController, uriController),
-          const SizedBox(height: 4),
-          _buildLogsWindow(tabKey),
-          Expanded(
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildUriBar(tabKey, actionController, profileController, uriController)),
+          const SliverToBoxAdapter(child: SizedBox(height: 4)),
+          SliverToBoxAdapter(child: _buildLogsWindow(tabKey)),
+          SliverFillRemaining(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
                 if (constraints.maxWidth >= 800) {
@@ -275,37 +274,34 @@ class ActionView extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  children: List.generate(argsController.controllers.length, (i) {
-                    return Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: argsController.controllers[i],
-                                decoration: InputDecoration(
-                                  labelText: "Args ${i + 1}",
-                                  border: const OutlineInputBorder(),
-                                ),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                children: List.generate(argsController.controllers.length, (i) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: argsController.controllers[i],
+                              decoration: InputDecoration(
+                                labelText: "Args ${i + 1}",
+                                border: const OutlineInputBorder(),
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: argsController.controllers.length > 1
-                                  ? () => argsController.removeController(i)
-                                  : null,
-                            ),
-                          ],
-                        ),
-                        if (i != argsController.controllers.length - 1) const SizedBox(height: 12),
-                      ],
-                    );
-                  }),
-                ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed:
+                                argsController.controllers.length > 1 ? () => argsController.removeController(i) : null,
+                          ),
+                        ],
+                      ),
+                      if (i != argsController.controllers.length - 1) const SizedBox(height: 12),
+                    ],
+                  );
+                }),
               ),
             ),
           ),
@@ -337,61 +333,59 @@ class ActionView extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: List.generate(kwargsController.tableData.length, (i) {
-                    return Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                initialValue: kwargsController.tableData[i].key,
-                                decoration: const InputDecoration(
-                                  labelText: "Key",
-                                  border: OutlineInputBorder(),
-                                ),
-                                onChanged: (value) {
-                                  final updatedEntry = MapEntry(
-                                    value,
-                                    kwargsController.tableData[i].value,
-                                  );
-                                  kwargsController.updateRow(i, updatedEntry);
-                                },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(kwargsController.tableData.length, (i) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              initialValue: kwargsController.tableData[i].key,
+                              decoration: const InputDecoration(
+                                labelText: "Key",
+                                border: OutlineInputBorder(),
                               ),
+                              onChanged: (value) {
+                                final updatedEntry = MapEntry(
+                                  value,
+                                  kwargsController.tableData[i].value,
+                                );
+                                kwargsController.updateRow(i, updatedEntry);
+                              },
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextFormField(
-                                initialValue: kwargsController.tableData[i].value,
-                                decoration: const InputDecoration(
-                                  labelText: "Value",
-                                  border: OutlineInputBorder(),
-                                ),
-                                onChanged: (value) {
-                                  final updatedEntry = MapEntry(
-                                    kwargsController.tableData[i].key,
-                                    value,
-                                  );
-                                  kwargsController.updateRow(i, updatedEntry);
-                                },
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextFormField(
+                              initialValue: kwargsController.tableData[i].value,
+                              decoration: const InputDecoration(
+                                labelText: "Value",
+                                border: OutlineInputBorder(),
                               ),
+                              onChanged: (value) {
+                                final updatedEntry = MapEntry(
+                                  kwargsController.tableData[i].key,
+                                  value,
+                                );
+                                kwargsController.updateRow(i, updatedEntry);
+                              },
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed:
-                                  kwargsController.tableData.length > 1 ? () => kwargsController.removeRow(i) : null,
-                            ),
-                          ],
-                        ),
-                        if (i != kwargsController.tableData.length - 1) const SizedBox(height: 12),
-                      ],
-                    );
-                  }),
-                ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed:
+                                kwargsController.tableData.length > 1 ? () => kwargsController.removeRow(i) : null,
+                          ),
+                        ],
+                      ),
+                      if (i != kwargsController.tableData.length - 1) const SizedBox(height: 12),
+                    ],
+                  );
+                }),
               ),
             ),
           ),
