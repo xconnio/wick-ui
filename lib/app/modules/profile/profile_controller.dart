@@ -18,6 +18,11 @@ class ProfileController extends GetxController with StateManager, SessionManager
     await initializeState();
     await loadProfiles();
     await restoreSessions(profiles);
+    await validateSessions();
+  }
+
+  Future<void> refreshSessions() async {
+    await validateSessions();
   }
 
   Future<void> saveProfiles() async {

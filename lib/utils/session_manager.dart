@@ -39,22 +39,36 @@ mixin SessionManager on StateManager {
       client = Client(serializer: serializer);
     }
 
-    final session = await client.connect(profile.uri, profile.realm);
-    activeSessions[profile.name] = session;
-    profileSessions[profile.name] = true;
-    await saveProfileState();
-    log("SessionManager: Connected session for '${profile.name}'");
-    return session;
+    try {
+      final session = await client.connect(profile.uri, profile.realm);
+      activeSessions[profile.name] = session;
+      profileSessions[profile.name] = true;
+      await saveProfileState();
+      log("SessionManager: Connected session for '${profile.name}'");
+      return session;
+    } on Exception catch (e) {
+      activeSessions.remove(profile.name);
+      profileSessions[profile.name] = false;
+      await saveProfileState();
+      log("SessionManager: Failed to connect or session closed for '${profile.name}': $e");
+      rethrow;
+    }
   }
 
   Future<void> disconnect(ProfileModel profile) async {
     final session = activeSessions[profile.name];
     if (session != null) {
-      await session.close();
+      try {
+        await session.close();
+        log("SessionManager: Disconnected session for '${profile.name}'");
+      } on Exception catch (e) {
+        log("SessionManager: Session for '${profile.name}' already closed or error: $e");
+      }
       activeSessions.remove(profile.name);
       profileSessions[profile.name] = false;
       await saveProfileState();
-      log("SessionManager: Disconnected session for '${profile.name}'");
+    } else {
+      log("SessionManager: No active session for '${profile.name}' to disconnect");
     }
   }
 
@@ -64,7 +78,11 @@ mixin SessionManager on StateManager {
 
   Future<void> clearAllSessions() async {
     for (final session in activeSessions.values) {
-      await session.close();
+      try {
+        await session.close();
+      } on Exception catch (e) {
+        log("SessionManager: Error closing session during clear: $e");
+      }
     }
     activeSessions.clear();
     profileSessions.clear();
@@ -96,6 +114,25 @@ mixin SessionManager on StateManager {
           profileSessions[profile.name] = false;
           await saveProfileState();
           log("SessionManager: Failed to restore session for '${profile.name}': $e");
+        }
+      }
+    }
+  }
+
+  Future<void> validateSessions() async {
+    log("SessionManager: Validating all active sessions");
+    final profilesToCheck = activeSessions.keys.toList();
+    for (final profileName in profilesToCheck) {
+      final session = activeSessions[profileName];
+      if (session != null) {
+        try {
+          await session.call("wamp.session.count");
+          log("SessionManager: Session for '$profileName' is alive");
+        } on Exception catch (e) {
+          log("SessionManager: Session for '$profileName' is no longer alive: $e");
+          activeSessions.remove(profileName);
+          profileSessions[profileName] = false;
+          await saveProfileState();
         }
       }
     }
