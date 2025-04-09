@@ -26,7 +26,6 @@ class ProfileView extends StatelessWidget {
               itemBuilder: (context, index) {
                 final profile = controller.profiles[index];
                 final isConnecting = controller.connectingProfiles.contains(profile);
-                final errorMessage = controller.errorMessages[profile.name];
 
                 return ProfileCard(
                   controller: controller,
