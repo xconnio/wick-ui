@@ -293,9 +293,8 @@ class ActionView extends StatelessWidget {
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
-                            onPressed: argsController.controllers.length > 1
-                                ? () => argsController.removeController(i)
-                                : null,
+                            onPressed:
+                                argsController.controllers.length > 1 ? () => argsController.removeController(i) : null,
                           ),
                         ],
                       ),
