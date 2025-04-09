@@ -12,7 +12,6 @@ class ProfileCard extends StatelessWidget {
     required Key key,
     required this.profile,
     required this.isConnecting,
-    required this.errorMessage,
     required this.onEdit,
     required this.onDelete,
     required this.onToggle,
@@ -21,7 +20,6 @@ class ProfileCard extends StatelessWidget {
   final ProfileController controller;
   final ProfileModel profile;
   final bool isConnecting;
-  final String? errorMessage;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggle;
@@ -29,6 +27,7 @@ class ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final errorMessage = controller.errorMessages[profile.name];
       final isConnected = controller.profileSessions[profile.name] ?? false;
       return Card(
         elevation: 2,
@@ -127,7 +126,6 @@ class ProfileCard extends StatelessWidget {
       ..add(DiagnosticsProperty<ProfileController>("controller", controller))
       ..add(DiagnosticsProperty<ProfileModel>("profile", profile))
       ..add(DiagnosticsProperty<bool>("isConnecting", isConnecting))
-      ..add(StringProperty("errorMessage", errorMessage))
       ..add(ObjectFlagProperty<VoidCallback>.has("onEdit", onEdit))
       ..add(ObjectFlagProperty<VoidCallback>.has("onDelete", onDelete))
       ..add(ObjectFlagProperty<VoidCallback>.has("onToggle", onToggle));

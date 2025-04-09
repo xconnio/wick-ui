@@ -33,7 +33,6 @@ class ProfileView extends StatelessWidget {
                   key: ValueKey(profile.name),
                   profile: profile,
                   isConnecting: isConnecting,
-                  errorMessage: errorMessage,
                   onEdit: () async {
                     await controller.createProfile(profile: profile);
                   },
