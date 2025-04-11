@@ -2,6 +2,7 @@ import "dart:developer";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/profile_model.dart";
+import "package:wick_ui/app/modules/router/router_controller.dart";
 import "package:wick_ui/utils/session_manager.dart";
 import "package:wick_ui/utils/state_manager.dart";
 import "package:wick_ui/utils/storage_manager.dart";
@@ -63,6 +64,12 @@ class ProfileController extends GetxController with StateManager, SessionManager
       await disconnect(profile);
       log("ProfileController: Disconnected '${profile.name}'");
     } else {
+      final routerController = Get.find<RouterController>();
+      if (!(routerController.runningRouters[profile.realm] ?? false)) {
+        log("ProfileController: Router for realm '${profile.realm}' not running, skipping connection");
+        errorMessages[profile.name] = "Router not running for realm '${profile.realm}'";
+        return;
+      }
       connectingProfiles.add(profile);
       try {
         await connect(profile);

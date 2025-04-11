@@ -1,15 +1,34 @@
+import "dart:developer" as dev;
+import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/profile_model.dart";
 import "package:wick_ui/app/modules/profile/profile_controller.dart";
 import "package:xconn/xconn.dart";
 
 class ActionController extends GetxController {
+  ActionController() {
+    uriController = TextEditingController();
+  }
   Rx<ProfileModel?> selectedProfile = Rx<ProfileModel?>(null);
   RxString uri = "".obs;
   RxString selectedWampMethod = "".obs;
   RxString logsMessage = "".obs;
 
   final ProfileController profileController = Get.find<ProfileController>();
+  late TextEditingController uriController;
+
+  @override
+  void onInit() {
+    super.onInit();
+    dev.log("ActionController: Initialized");
+  }
+
+  @override
+  void onClose() {
+    uriController.dispose();
+    dev.log("ActionController: Closed, uriController disposed");
+    super.onClose();
+  }
 
   Future<void> setSelectedProfile(ProfileModel profile) async {
     selectedProfile.value = profile;

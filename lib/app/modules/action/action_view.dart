@@ -22,50 +22,68 @@ class ActionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.of(context).size.height;
+
     return ResponsiveScaffold(
       title: "Actions",
       body: TabContainerWidget(
-        buildScreen: _buildScreen,
+        buildScreen: (context, tabKey) => _buildScreen(context, tabKey, screenHeight),
       ),
     );
   }
 
-  Widget _buildScreen(BuildContext context, int tabKey) {
-    Get
-      ..put(ArgsController(), tag: "args_$tabKey")
-      ..put(KwargsController(), tag: "kwargs_$tabKey");
-    final ActionController actionController = Get.put(ActionController(), tag: "action_$tabKey");
+  Widget _buildScreen(BuildContext context, int tabKey, double screenHeight) {
+    if (!Get.isRegistered<ArgsController>(tag: "args_$tabKey")) {
+      Get.put(ArgsController(), tag: "args_$tabKey");
+    }
+    if (!Get.isRegistered<KwargsController>(tag: "kwargs_$tabKey")) {
+      Get.put(KwargsController(), tag: "kwargs_$tabKey");
+    }
+    if (!Get.isRegistered<ActionController>(tag: "action_$tabKey")) {
+      Get.put(ActionController(), tag: "action_$tabKey");
+    }
+
+    final ActionController actionController = Get.find<ActionController>(tag: "action_$tabKey");
     final ProfileController profileController = Get.find<ProfileController>();
-    final TextEditingController uriController = TextEditingController();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _buildUriBar(tabKey, actionController, profileController, uriController)),
-          const SliverToBoxAdapter(child: SizedBox(height: 4)),
-          SliverToBoxAdapter(child: _buildLogsWindow(tabKey)),
-          SliverFillRemaining(
-            child: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                if (constraints.maxWidth >= 800) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildArgsTab(tabKey)),
-                      Expanded(child: _buildKwargsTab(tabKey)),
-                    ],
-                  );
-                } else {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildArgsTab(tabKey)),
-                      Expanded(child: _buildKwargsTab(tabKey)),
-                    ],
-                  );
-                }
-              },
+          SliverToBoxAdapter(
+            child: _buildUriBar(tabKey, actionController, profileController),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 8)),
+          SliverToBoxAdapter(child: _buildLogsWindow(tabKey, screenHeight)),
+          const SliverToBoxAdapter(child: SizedBox(height: 8)),
+          SliverToBoxAdapter(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: screenHeight * 0.4,
+              ),
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  if (constraints.maxWidth >= 800) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _buildArgsTab(tabKey)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildKwargsTab(tabKey)),
+                      ],
+                    );
+                  } else {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildArgsTab(tabKey),
+                        const SizedBox(height: 8),
+                        _buildKwargsTab(tabKey),
+                      ],
+                    );
+                  }
+                },
+              ),
             ),
           ),
         ],
@@ -77,7 +95,6 @@ class ActionView extends StatelessWidget {
     int tabKey,
     ActionController actionController,
     ProfileController profileController,
-    TextEditingController uriController,
   ) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final bool isMobile =
@@ -88,16 +105,18 @@ class ActionView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
+          border: Border.all(color: Colors.grey.shade600),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           children: isMobile
               ? [
                   TextFormField(
-                    controller: uriController,
+                    controller: actionController.uriController,
+                    style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: "URI",
+                      labelStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                     ),
                     validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
@@ -110,7 +129,7 @@ class ActionView extends StatelessWidget {
                       ),
                       Expanded(
                         flex: 2,
-                        child: _buildWampMethodButton(tabKey, formKey, uriController),
+                        child: _buildWampMethodButton(tabKey, formKey),
                       ),
                     ],
                   ),
@@ -126,9 +145,11 @@ class ActionView extends StatelessWidget {
                       Expanded(
                         flex: 4,
                         child: TextFormField(
-                          controller: uriController,
+                          controller: actionController.uriController,
+                          style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
                             labelText: "URI",
+                            labelStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
                           ),
                           validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
@@ -136,7 +157,7 @@ class ActionView extends StatelessWidget {
                       ),
                       Expanded(
                         flex: 2,
-                        child: _buildWampMethodButton(tabKey, formKey, uriController),
+                        child: _buildWampMethodButton(tabKey, formKey),
                       ),
                     ],
                   ),
@@ -150,8 +171,10 @@ class ActionView extends StatelessWidget {
     return Obx(() {
       return DropdownButtonFormField<ProfileModel>(
         isExpanded: true,
-        hint: const Text("Select Profile"),
+        hint: const Text("Select Profile", style: TextStyle(color: Colors.grey)),
         value: actionController.selectedProfile.value,
+        style: const TextStyle(color: Colors.white),
+        dropdownColor: Colors.grey.shade800,
         onChanged: (ProfileModel? newValue) async {
           await actionController.setSelectedProfile(newValue!);
         },
@@ -166,6 +189,7 @@ class ActionView extends StatelessWidget {
                   child: Text(
                     profile.name,
                     overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
                 StatusIndicator(
@@ -179,7 +203,7 @@ class ActionView extends StatelessWidget {
     });
   }
 
-  Widget _buildWampMethodButton(int tabKey, GlobalKey<FormState> formKey, TextEditingController uriController) {
+  Widget _buildWampMethodButton(int tabKey, GlobalKey<FormState> formKey) {
     final ActionController actionController = Get.find<ActionController>(tag: "action_$tabKey");
     final ArgsController argsController = Get.find<ArgsController>(tag: "args_$tabKey");
     final KwargsController kwargsController = Get.find<KwargsController>(tag: "kwargs_$tabKey");
@@ -187,7 +211,7 @@ class ActionView extends StatelessWidget {
     return Obx(() {
       return DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(),
+          border: Border.all(color: Colors.grey.shade600),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -205,7 +229,7 @@ class ActionView extends StatelessWidget {
                       actionController.selectedWampMethod.value.isNotEmpty
                           ? actionController.selectedWampMethod.value
                           : wampMethods.first,
-                      uriController.text,
+                      actionController.uriController.text,
                       args,
                       kwArgs,
                     );
@@ -220,7 +244,11 @@ class ActionView extends StatelessWidget {
                         actionController.selectedWampMethod.value.isNotEmpty
                             ? actionController.selectedWampMethod.value
                             : wampMethods.first,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -235,16 +263,17 @@ class ActionView extends StatelessWidget {
                 return wampMethods.map((method) {
                   return PopupMenuItem<String>(
                     value: method,
-                    child: Text(method),
+                    child: Text(method, style: const TextStyle(color: Colors.white)),
                   );
                 }).toList();
               },
+              color: Colors.grey.shade800,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: const BoxDecoration(
                   border: Border(left: BorderSide(color: Colors.grey)),
                 ),
-                child: const Icon(Icons.arrow_drop_down, size: 24),
+                child: const Icon(Icons.arrow_drop_down, size: 24, color: Colors.white),
               ),
             ),
           ],
@@ -257,55 +286,67 @@ class ActionView extends StatelessWidget {
     final ArgsController argsController = Get.find<ArgsController>(tag: "args_$tabKey");
 
     return Obx(() {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Args"),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: argsController.addController,
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade600),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
               padding: const EdgeInsets.all(8),
-              child: Column(
-                children: List.generate(argsController.controllers.length, (i) {
-                  return Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: argsController.controllers[i],
-                              decoration: InputDecoration(
-                                labelText: "Args ${i + 1}",
-                                border: const OutlineInputBorder(),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Args", style: TextStyle(color: Colors.white)),
+                  IconButton(
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    onPressed: argsController.addController,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: ListView.separated(
+                  itemCount: argsController.controllers.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, i) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: argsController.controllers[i],
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              labelText: "Args ${i + 1}",
+                              labelStyle: const TextStyle(color: Colors.grey),
+                              border: const OutlineInputBorder(),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.grey.shade600),
+                              ),
+                              focusedBorder: const OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white),
                               ),
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed:
-                                argsController.controllers.length > 1 ? () => argsController.removeController(i) : null,
-                          ),
-                        ],
-                      ),
-                      if (i != argsController.controllers.length - 1) const SizedBox(height: 12),
-                    ],
-                  );
-                }),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.white),
+                          onPressed:
+                              argsController.controllers.length > 1 ? () => argsController.removeController(i) : null,
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     });
   }
@@ -314,101 +355,120 @@ class ActionView extends StatelessWidget {
     final KwargsController kwargsController = Get.find<KwargsController>(tag: "kwargs_$tabKey");
 
     return Obx(() {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Kwargs"),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    kwargsController.addRow(const MapEntry("", ""));
-                  },
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
+      return Container(
+        height: 200, // Fixed height to match screenshot
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade600),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
               padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(kwargsController.tableData.length, (i) {
-                  return Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              initialValue: kwargsController.tableData[i].key,
-                              decoration: const InputDecoration(
-                                labelText: "Key",
-                                border: OutlineInputBorder(),
-                              ),
-                              onChanged: (value) {
-                                final updatedEntry = MapEntry(
-                                  value,
-                                  kwargsController.tableData[i].value,
-                                );
-                                kwargsController.updateRow(i, updatedEntry);
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextFormField(
-                              initialValue: kwargsController.tableData[i].value,
-                              decoration: const InputDecoration(
-                                labelText: "Value",
-                                border: OutlineInputBorder(),
-                              ),
-                              onChanged: (value) {
-                                final updatedEntry = MapEntry(
-                                  kwargsController.tableData[i].key,
-                                  value,
-                                );
-                                kwargsController.updateRow(i, updatedEntry);
-                              },
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed:
-                                kwargsController.tableData.length > 1 ? () => kwargsController.removeRow(i) : null,
-                          ),
-                        ],
-                      ),
-                      if (i != kwargsController.tableData.length - 1) const SizedBox(height: 12),
-                    ],
-                  );
-                }),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Kwargs", style: TextStyle(color: Colors.white)),
+                  IconButton(
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    onPressed: () {
+                      kwargsController.addRow(const MapEntry("", ""));
+                    },
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: ListView.separated(
+                  itemCount: kwargsController.tableData.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, i) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            initialValue: kwargsController.tableData[i].key,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              labelText: "Key",
+                              labelStyle: const TextStyle(color: Colors.grey),
+                              border: const OutlineInputBorder(),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.grey.shade600),
+                              ),
+                              focusedBorder: const OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              final updatedEntry = MapEntry(
+                                value,
+                                kwargsController.tableData[i].value,
+                              );
+                              kwargsController.updateRow(i, updatedEntry);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            initialValue: kwargsController.tableData[i].value,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              labelText: "Value",
+                              labelStyle: const TextStyle(color: Colors.grey),
+                              border: const OutlineInputBorder(),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.grey.shade600),
+                              ),
+                              focusedBorder: const OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              final updatedEntry = MapEntry(
+                                kwargsController.tableData[i].key,
+                                value,
+                              );
+                              kwargsController.updateRow(i, updatedEntry);
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.white),
+                          onPressed: kwargsController.tableData.length > 1 ? () => kwargsController.removeRow(i) : null,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     });
   }
 
-  Widget _buildLogsWindow(int tabKey) {
-    final ScrollController scrollController = Get.put(ScrollController(), tag: "logs_$tabKey");
+  Widget _buildLogsWindow(int tabKey, double screenHeight) {
+    if (!Get.isRegistered<ScrollController>(tag: "logs_$tabKey")) {
+      Get.put(ScrollController(), tag: "logs_$tabKey");
+    }
+    final ScrollController scrollController = Get.find<ScrollController>(tag: "logs_$tabKey");
     final ActionController actionController = Get.find<ActionController>(tag: "action_$tabKey");
 
     return Obx(() {
       final Orientation orientation = MediaQuery.of(Get.context!).orientation;
-      final double screenHeight = MediaQuery.of(Get.context!).size.height;
-
       final double logsHeight = orientation == Orientation.portrait
           ? (screenHeight <= 600 ? screenHeight * 0.5 : screenHeight * 0.1)
-          : screenHeight * 0.4;
+          : screenHeight * 0.2;
       return Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
+          border: Border.all(color: Colors.grey.shade600),
           borderRadius: BorderRadius.circular(8),
         ),
         width: double.infinity,
@@ -419,7 +479,7 @@ class ActionView extends StatelessWidget {
               padding: EdgeInsets.all(4),
               child: Text(
                 "Logs",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
             SizedBox(
@@ -427,7 +487,10 @@ class ActionView extends StatelessWidget {
               child: ListView(
                 controller: scrollController,
                 children: [
-                  Text(actionController.logsMessage.value),
+                  Text(
+                    actionController.logsMessage.value,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
             ),
