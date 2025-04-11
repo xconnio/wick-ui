@@ -23,7 +23,7 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
 
   TabController? _controller;
   final Map<int, Widget> _tabs = {};
-  final Map<int, Widget> _children = {};
+  final List<int> _tabKeys = [];
   int _tabCounter = 0;
 
   @override
@@ -34,11 +34,11 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
   }
 
   void _initializeController(int selectedIndex) {
-    if (_tabs.isNotEmpty) {
+    if (_tabKeys.isNotEmpty) {
       _controller = TabController(
         vsync: this,
-        length: _tabs.length,
-        initialIndex: selectedIndex.clamp(0, _tabs.length - 1),
+        length: _tabKeys.length,
+        initialIndex: selectedIndex.clamp(0, _tabKeys.length - 1),
       );
     } else {
       _controller = null;
@@ -51,21 +51,21 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
       String title = "Tab ${newKey + 1}";
 
       _tabs[newKey] = _buildTab(title, newKey);
-      _children[newKey] = widget.buildScreen(context, newKey);
+      _tabKeys.add(newKey);
 
-      _initializeController(_tabs.length - 1);
+      _initializeController(_tabKeys.length - 1);
     });
   }
 
   void _removeTab(int key) {
-    if (_tabs.length > 1) {
+    if (_tabKeys.length > 1) {
       final int currentIndex = _controller?.index ?? 0;
 
       setState(() {
         _tabs.remove(key);
-        _children.remove(key);
+        _tabKeys.remove(key);
 
-        final int newIndex = (currentIndex >= _tabs.length) ? _tabs.length - 1 : currentIndex;
+        final int newIndex = (currentIndex >= _tabKeys.length) ? _tabKeys.length - 1 : currentIndex;
 
         _initializeController(newIndex);
       });
@@ -77,10 +77,10 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(title),
-          if (_tabs.isNotEmpty)
+          Text(title, style: const TextStyle(color: Colors.white)),
+          if (_tabKeys.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.close),
+              icon: const Icon(Icons.close, color: Colors.white),
               onPressed: () => _removeTab(key),
             ),
         ],
@@ -92,7 +92,7 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
     return Tooltip(
       message: "Add a new tab",
       child: IconButton(
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add, color: Colors.white),
         onPressed: _addTab,
       ),
     );
@@ -105,12 +105,12 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
       child: SizedBox.expand(
         child: Column(
           children: [
-            if (_tabs.isEmpty)
+            if (_tabKeys.isEmpty)
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("No tabs available!"),
+                    const Text("No tabs available!", style: TextStyle(color: Colors.white)),
                     _addTabButton(),
                   ],
                 ),
@@ -124,17 +124,23 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
                         Expanded(
                           child: TabBar(
                             controller: _controller,
-                            isScrollable: true, // Makes the TabBar scrollable if necessary
-                            tabs: _tabs.values.toList(),
+                            isScrollable: true,
+                            tabs: _tabKeys.map((key) => _tabs[key]!).toList(),
                           ),
                         ),
-                        _addTabButton(), // Add button aligned to the right
+                        _addTabButton(),
                       ],
                     ),
                     Expanded(
                       child: TabBarView(
                         controller: _controller,
-                        children: _children.values.toList(),
+                        children: _tabKeys.map((key) {
+                          return Builder(
+                            builder: (BuildContext context) {
+                              return widget.buildScreen(context, key);
+                            },
+                          );
+                        }).toList(),
                       ),
                     ),
                   ],

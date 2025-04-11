@@ -26,6 +26,11 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       initialRoute: AppRoutes.action,
       getPages: AppPages.routes,
+      initialBinding: BindingsBuilder(() {
+        Get
+          ..lazyPut<RouterController>(RouterController.new, fenix: true)
+          ..lazyPut<ProfileController>(ProfileController.new, fenix: true);
+      }),
     );
   }
 }
