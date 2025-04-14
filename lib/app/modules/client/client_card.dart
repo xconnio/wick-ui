@@ -1,24 +1,24 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart";
-import "package:wick_ui/app/data/models/profile_model.dart";
-import "package:wick_ui/app/modules/profile/profile_controller.dart";
+import "package:wick_ui/app/data/models/client_model.dart";
+import "package:wick_ui/app/modules/client/client_controller.dart";
 import "package:wick_ui/utils/infow_row.dart";
 import "package:wick_ui/utils/status_indicator.dart";
 
-class ProfileCard extends StatelessWidget {
-  const ProfileCard({
+class ClientCard extends StatelessWidget {
+  const ClientCard({
     required this.controller,
     required Key key,
-    required this.profile,
+    required this.client,
     required this.isConnecting,
     required this.onEdit,
     required this.onDelete,
     required this.onToggle,
   }) : super(key: key);
 
-  final ProfileController controller;
-  final ProfileModel profile;
+  final ClientController controller;
+  final ClientModel client;
   final bool isConnecting;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -27,8 +27,8 @@ class ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final errorMessage = controller.errorMessages[profile.name];
-      final isConnected = controller.profileSessions[profile.name] ?? false;
+      final errorMessage = controller.errorMessages[client.name];
+      final isConnected = controller.clientSessions[client.name] ?? false;
       return Card(
         elevation: 2,
         margin: const EdgeInsets.symmetric(vertical: 4),
@@ -42,7 +42,7 @@ class ProfileCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      profile.name,
+                      client.name,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.primary,
@@ -64,19 +64,19 @@ class ProfileCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              InfoRow(icon: Icons.public, label: "Realm", value: profile.realm),
-              InfoRow(icon: Icons.link, label: "URI", value: profile.uri),
+              InfoRow(icon: Icons.public, label: "Realm", value: client.realm),
+              InfoRow(icon: Icons.link, label: "URI", value: client.uri),
               InfoRow(
                 icon: Icons.account_circle,
                 label: "Auth ID",
-                value: profile.authid,
+                value: client.authid,
               ),
               InfoRow(
                 icon: Icons.data_usage,
                 label: "Auth Method",
-                value: profile.authmethod,
+                value: client.authmethod,
               ),
-              InfoRow(icon: Icons.data_array, label: "Serializer", value: profile.serializer),
+              InfoRow(icon: Icons.data_array, label: "Serializer", value: client.serializer),
               if (errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -123,8 +123,8 @@ class ProfileCard extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<ProfileController>("controller", controller))
-      ..add(DiagnosticsProperty<ProfileModel>("profile", profile))
+      ..add(DiagnosticsProperty<ClientController>("controller", controller))
+      ..add(DiagnosticsProperty<ClientModel>("client", client))
       ..add(DiagnosticsProperty<bool>("isConnecting", isConnecting))
       ..add(ObjectFlagProperty<VoidCallback>.has("onEdit", onEdit))
       ..add(ObjectFlagProperty<VoidCallback>.has("onDelete", onDelete))

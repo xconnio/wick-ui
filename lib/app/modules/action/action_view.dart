@@ -1,9 +1,9 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
-import "package:wick_ui/app/data/models/profile_model.dart";
+import "package:wick_ui/app/data/models/client_model.dart";
 import "package:wick_ui/app/modules/action/action_controller.dart";
-import "package:wick_ui/app/modules/profile/profile_controller.dart";
+import "package:wick_ui/app/modules/client/client_controller.dart";
 import "package:wick_ui/utils/args_controller.dart";
 import "package:wick_ui/utils/kwargs_controller.dart";
 import "package:wick_ui/utils/responsive_scaffold.dart";
@@ -44,14 +44,14 @@ class ActionView extends StatelessWidget {
     }
 
     final ActionController actionController = Get.find<ActionController>(tag: "action_$tabKey");
-    final ProfileController profileController = Get.find<ProfileController>();
+    final ClientController clientController = Get.find<ClientController>();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: _buildUriBar(tabKey, actionController, profileController),
+            child: _buildUriBar(tabKey, actionController, clientController),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 8)),
           SliverToBoxAdapter(child: _buildLogsWindow(tabKey, screenHeight)),
@@ -94,7 +94,7 @@ class ActionView extends StatelessWidget {
   Widget _buildUriBar(
     int tabKey,
     ActionController actionController,
-    ProfileController profileController,
+      ClientController clientController,
   ) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final bool isMobile =
@@ -125,7 +125,7 @@ class ActionView extends StatelessWidget {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: _buildDropdown(tabKey, actionController, profileController),
+                        child: _buildDropdown(tabKey, actionController, clientController),
                       ),
                       Expanded(
                         flex: 2,
@@ -139,7 +139,7 @@ class ActionView extends StatelessWidget {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: _buildDropdown(tabKey, actionController, profileController),
+                        child: _buildDropdown(tabKey, actionController, clientController),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -167,33 +167,33 @@ class ActionView extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdown(int tabKey, ActionController actionController, ProfileController profileController) {
+  Widget _buildDropdown(int tabKey, ActionController actionController, ClientController clientController) {
     return Obx(() {
-      return DropdownButtonFormField<ProfileModel>(
+      return DropdownButtonFormField<ClientModel>(
         isExpanded: true,
-        hint: const Text("Select Profile", style: TextStyle(color: Colors.grey)),
-        value: actionController.selectedProfile.value,
+        hint: const Text("Select Client", style: TextStyle(color: Colors.grey)),
+        value: actionController.ClientClient.value,
         style: const TextStyle(color: Colors.white),
         dropdownColor: Colors.grey.shade800,
-        onChanged: (ProfileModel? newValue) async {
-          await actionController.setSelectedProfile(newValue!);
+        onChanged: (ClientModel? newValue) async {
+          await actionController.setSelectedClient(newValue!);
         },
-        validator: (value) => value == null ? "Please select a profile." : null,
-        items: profileController.profiles.map((ProfileModel profile) {
-          return DropdownMenuItem<ProfileModel>(
-            value: profile,
+        validator: (value) => value == null ? "Please select a client." : null,
+        items: clientController.clients.map((ClientModel client) {
+          return DropdownMenuItem<ClientModel>(
+            value: client,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
-                    profile.name,
+                    client.name,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
                 StatusIndicator(
-                  isActive: profileController.profileSessions[profile.name] ?? false,
+                  isActive: clientController.clientSessions[client.name] ?? false,
                 ),
               ],
             ),

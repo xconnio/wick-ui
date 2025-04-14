@@ -1,45 +1,45 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
-import "package:wick_ui/app/modules/profile/profile_card.dart";
-import "package:wick_ui/app/modules/profile/profile_controller.dart";
+import "package:wick_ui/app/modules/client/client_card.dart";
+import "package:wick_ui/app/modules/client/client_controller.dart";
 import "package:wick_ui/utils/responsive_scaffold.dart";
 
-class ProfileView extends StatelessWidget {
-  ProfileView({super.key});
+class ClientView extends StatelessWidget {
+  ClientView({super.key});
 
-  final ProfileController controller = Get.find<ProfileController>();
+  final ClientController controller = Get.find<ClientController>();
 
   @override
   Widget build(BuildContext context) {
     return ResponsiveScaffold(
-      title: "Profiles",
+      title: "Clients",
       body: Obx(() {
-        if (controller.profiles.isEmpty) {
-          return const Center(child: Text("No profiles created yet."));
+        if (controller.clients.isEmpty) {
+          return const Center(child: Text("No clients created yet."));
         } else {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ListView.separated(
-              itemCount: controller.profiles.length,
+              itemCount: controller.clients.length,
               separatorBuilder: (_, __) => const Divider(),
               itemBuilder: (context, index) {
-                final profile = controller.profiles[index];
-                final isConnecting = controller.connectingProfiles.contains(profile);
+                final client = controller.clients[index];
+                final isConnecting = controller.connectingClient.contains(client);
 
-                return ProfileCard(
+                return ClientCard(
                   controller: controller,
-                  key: ValueKey(profile.name),
-                  profile: profile,
+                  key: ValueKey(client.name),
+                  client: client,
                   isConnecting: isConnecting,
                   onEdit: () async {
-                    await controller.createProfile(profile: profile);
+                    await controller.createClient(client: client);
                   },
                   onDelete: () async {
-                    await controller.deleteProfile(profile);
+                    await controller.deleteClient(client);
                   },
                   onToggle: () async {
-                    await controller.toggleConnection(profile);
+                    await controller.toggleConnection(client);
                   },
                 );
               },
@@ -48,7 +48,8 @@ class ProfileView extends StatelessWidget {
         }
       }),
       floatingActionButton: FloatingActionButton(
-        onPressed: controller.createProfile,
+        tooltip: "Create a new client",
+        onPressed: controller.createClient,
         child: const Icon(Icons.add),
       ),
     );
@@ -57,6 +58,6 @@ class ProfileView extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<ProfileController>("controller", controller));
+    properties.add(DiagnosticsProperty<ClientController>("controller", controller));
   }
 }

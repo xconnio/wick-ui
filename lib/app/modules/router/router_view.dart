@@ -49,11 +49,10 @@ class RouterView extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         tooltip: "Create a new router",
-        icon: const Icon(Icons.add, size: 24),
-        label: const Text("New Router"),
         onPressed: controller.createRouterConfig,
+        child: const Icon(Icons.add),
       ),
     );
   }

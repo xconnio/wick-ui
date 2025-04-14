@@ -1,20 +1,20 @@
 import "dart:developer" as dev;
 import "package:flutter/material.dart";
 import "package:get/get.dart";
-import "package:wick_ui/app/data/models/profile_model.dart";
-import "package:wick_ui/app/modules/profile/profile_controller.dart";
+import "package:wick_ui/app/data/models/client_model.dart";
+import "package:wick_ui/app/modules/client/client_controller.dart";
 import "package:xconn/xconn.dart";
 
 class ActionController extends GetxController {
   ActionController() {
     uriController = TextEditingController();
   }
-  Rx<ProfileModel?> selectedProfile = Rx<ProfileModel?>(null);
+  Rx<ClientModel?> ClientClient = Rx<ClientModel?>(null);
   RxString uri = "".obs;
   RxString selectedWampMethod = "".obs;
   RxString logsMessage = "".obs;
 
-  final ProfileController profileController = Get.find<ProfileController>();
+  final ClientController clientController = Get.find<ClientController>();
   late TextEditingController uriController;
 
   @override
@@ -30,10 +30,10 @@ class ActionController extends GetxController {
     super.onClose();
   }
 
-  Future<void> setSelectedProfile(ProfileModel profile) async {
-    selectedProfile.value = profile;
-    if (!profileController.isConnected(profile) && (profileController.profileSessions[profile.name] ?? false)) {
-      await profileController.connect(profile);
+  Future<void> setSelectedClient(ClientModel client) async {
+    ClientClient.value = client;
+    if (!clientController.isConnected(client) && (clientController.clientSessions[client.name] ?? false)) {
+      await clientController.connect(client);
     }
   }
 
@@ -52,8 +52,8 @@ class ActionController extends GetxController {
     List<String> args,
     Map<String, String> kwArgs,
   ) async {
-    if (selectedProfile.value == null) {
-      _addLog("Please select a profile first.");
+    if (ClientClient.value == null) {
+      _addLog("Please select a client first.");
       return;
     }
 
@@ -80,9 +80,9 @@ class ActionController extends GetxController {
         kwArgs.clear();
       }
 
-      final session = profileController.isConnected(selectedProfile.value!)
-          ? profileController.activeSessions[selectedProfile.value!.name]!
-          : await profileController.connect(selectedProfile.value!);
+      final session = clientController.isConnected(ClientClient.value!)
+          ? clientController.activeSessions[ClientClient.value!.name]!
+          : await clientController.connect(ClientClient.value!);
 
       switch (actionType) {
         case "Call":

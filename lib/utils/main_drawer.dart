@@ -30,9 +30,9 @@ class MainDrawer extends StatelessWidget {
             ),
           ListTile(
             leading: const Icon(Icons.person),
-            title: const Text("Profile"),
+            title: const Text("Client"),
             onTap: () async {
-              await Get.offAllNamed(AppRoutes.profile);
+              await Get.offAllNamed(AppRoutes.client);
             },
           ),
           ListTile(

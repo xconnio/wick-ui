@@ -6,9 +6,9 @@ import "package:path_provider/path_provider.dart";
 
 mixin StateManager {
   RxMap<String, bool> runningRouters = <String, bool>{}.obs;
-  RxMap<String, bool> profileSessions = <String, bool>{}.obs;
+  RxMap<String, bool> clientSessions = <String, bool>{}.obs;
   static const String _routerStateFile = "router_state.json";
-  static const String _profileStateFile = "profile_state.json";
+  static const String _clientStateFile = "client_state.json";
 
   Future<void> initializeState() async {
     await _loadAllStates();
@@ -20,17 +20,17 @@ mixin StateManager {
 
   Future<void> _loadAllStates() async {
     await loadRouterState();
-    await loadProfileState();
+    await loadClientState();
   }
 
   Future<void> saveAllStates() async {
     await saveRouterState();
-    await saveProfileState();
+    await saveClientState();
   }
 
   Future<void> clearAllStates() async {
     await clearRouterState();
-    await clearProfileState();
+    await clearClientState();
   }
 
   Future<void> saveRouterState() async {
@@ -76,46 +76,46 @@ mixin StateManager {
     }
   }
 
-  Future<void> saveProfileState() async {
+  Future<void> saveClientState() async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final file = File("${directory.path}/$_profileStateFile");
-      final state = profileSessions.toJson();
+      final file = File("${directory.path}/$_clientStateFile");
+      final state = clientSessions.toJson();
       await file.writeAsString(json.encode(state));
     } on Exception catch (e) {
-      log("Failed to save profile state: $e");
+      log("Failed to save client state: $e");
     }
   }
 
-  Future<void> loadProfileState() async {
+  Future<void> loadClientState() async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final file = File("${directory.path}/$_profileStateFile");
+      final file = File("${directory.path}/$_clientStateFile");
       if (file.existsSync()) {
         final stateString = await file.readAsString();
         final state = json.decode(stateString) as Map<String, dynamic>;
-        profileSessions.value = RxMap<String, bool>.from(
+        clientSessions.value = RxMap<String, bool>.from(
           state.map((key, value) => MapEntry(key, value as bool)),
         );
       }
     } on Exception catch (e) {
-      log("Failed to load profile state: $e");
+      log("Failed to load client state: $e");
     }
   }
 
-  Future<void> clearProfileState() async {
+  Future<void> clearClientState() async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final file = File("${directory.path}/$_profileStateFile");
+      final file = File("${directory.path}/$_clientStateFile");
       if (file.existsSync()) {
         await file.delete();
-        log("StateManager: Cleared profile state file");
+        log("StateManager: Cleared client state file");
       } else {
-        log("StateManager: No profile state file to clear");
+        log("StateManager: No client state file to clear");
       }
-      profileSessions.clear();
+      clientSessions.clear();
     } on Exception catch (e) {
-      log("StateManager: Failed to clear profile state: $e");
+      log("StateManager: Failed to clear client state: $e");
     }
   }
 }

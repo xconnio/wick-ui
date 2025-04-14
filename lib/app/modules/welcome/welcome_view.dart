@@ -12,7 +12,6 @@ class WelcomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // unawaited(controller.navigateToProfile());
     return const ResponsiveScaffold(
       body: Center(
         child: Text("Welcome"),

@@ -1,65 +1,65 @@
 import "dart:developer";
-import "package:wick_ui/app/data/models/profile_model.dart";
+import "package:wick_ui/app/data/models/client_model.dart";
 import "package:wick_ui/utils/state_manager.dart";
 import "package:xconn/xconn.dart";
 
 mixin SessionManager on StateManager {
   final Map<String, Session> activeSessions = {};
 
-  Future<Session> connect(ProfileModel profile) async {
-    if (activeSessions.containsKey(profile.name)) {
-      log("SessionManager: Session for '${profile.name}' already active");
-      return activeSessions[profile.name]!;
+  Future<Session> connect(ClientModel new_client) async {
+    if (activeSessions.containsKey(new_client.name)) {
+      log("SessionManager: Session for '${new_client.name}' already active");
+      return activeSessions[new_client.name]!;
     }
 
-    var serializer = _getSerializer(profile.serializer);
+    var serializer = _getSerializer(new_client.serializer);
 
     Client client;
-    if (profile.authmethod == "ticket") {
+    if (new_client.authmethod == "ticket") {
       client = Client(
         serializer: serializer,
-        authenticator: TicketAuthenticator(profile.authid, {}, profile.secret),
+        authenticator: TicketAuthenticator(new_client.authid, {}, new_client.secret),
       );
-    } else if (profile.authmethod == "wamp-cra") {
+    } else if (new_client.authmethod == "wamp-cra") {
       client = Client(
         serializer: serializer,
-        authenticator: WAMPCRAAuthenticator(profile.authid, {}, profile.secret),
+        authenticator: WAMPCRAAuthenticator(new_client.authid, {}, new_client.secret),
       );
-    } else if (profile.authmethod == "cryptoSign") {
+    } else if (new_client.authmethod == "cryptoSign") {
       client = Client(
         serializer: serializer,
-        authenticator: CryptoSignAuthenticator(profile.authid, {}, profile.secret),
+        authenticator: CryptoSignAuthenticator(new_client.authid, {}, new_client.secret),
       );
-    } else if (profile.authmethod == "anonymous") {
+    } else if (new_client.authmethod == "anonymous") {
       client = Client(
         serializer: serializer,
-        authenticator: AnonymousAuthenticator(profile.authid),
+        authenticator: AnonymousAuthenticator(new_client.authid),
       );
     } else {
       client = Client(serializer: serializer);
     }
 
-    final session = await client.connect(profile.uri, profile.realm);
-    activeSessions[profile.name] = session;
-    profileSessions[profile.name] = true;
-    await saveProfileState();
-    log("SessionManager: Connected session for '${profile.name}'");
+    final session = await client.connect(new_client.uri, new_client.realm);
+    activeSessions[new_client.name] = session;
+    clientSessions[new_client.name] = true;
+    await saveClientState();
+    log("SessionManager: Connected session for '${new_client.name}'");
     return session;
   }
 
-  Future<void> disconnect(ProfileModel profile) async {
-    final session = activeSessions[profile.name];
+  Future<void> disconnect(ClientModel client) async {
+    final session = activeSessions[client.name];
     if (session != null) {
       await session.close();
-      activeSessions.remove(profile.name);
-      profileSessions[profile.name] = false;
-      await saveProfileState();
-      log("SessionManager: Disconnected session for '${profile.name}'");
+      activeSessions.remove(client.name);
+      clientSessions[client.name] = false;
+      await saveClientState();
+      log("SessionManager: Disconnected session for '${client.name}'");
     }
   }
 
-  bool isConnected(ProfileModel profile) {
-    return activeSessions.containsKey(profile.name);
+  bool isConnected(ClientModel client) {
+    return activeSessions.containsKey(client.name);
   }
 
   Future<void> clearAllSessions() async {
@@ -67,8 +67,8 @@ mixin SessionManager on StateManager {
       await session.close();
     }
     activeSessions.clear();
-    profileSessions.clear();
-    await clearProfileState();
+    clientSessions.clear();
+    await clearClientState();
     log("SessionManager: Cleared all sessions");
   }
 
@@ -85,17 +85,17 @@ mixin SessionManager on StateManager {
     }
   }
 
-  Future<void> restoreSessions(List<ProfileModel> profiles) async {
+  Future<void> restoreSessions(List<ClientModel> clients) async {
     log("SessionManager: Restoring sessions");
-    for (final profile in profiles) {
-      if ((profileSessions[profile.name] ?? false) && !activeSessions.containsKey(profile.name)) {
+    for (final client in clients) {
+      if ((clientSessions[client.name] ?? false) && !activeSessions.containsKey(client.name)) {
         try {
-          await connect(profile);
-          log("SessionManager: Restored session for '${profile.name}'");
+          await connect(client);
+          log("SessionManager: Restored session for '${client.name}'");
         } on Exception catch (e) {
-          profileSessions[profile.name] = false;
-          await saveProfileState();
-          log("SessionManager: Failed to restore session for '${profile.name}': $e");
+          clientSessions[client.name] = false;
+          await saveClientState();
+          log("SessionManager: Failed to restore session for '${client.name}': $e");
         }
       }
     }
