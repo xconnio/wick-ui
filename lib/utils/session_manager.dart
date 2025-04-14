@@ -6,44 +6,44 @@ import "package:xconn/xconn.dart";
 mixin SessionManager on StateManager {
   final Map<String, Session> activeSessions = {};
 
-  Future<Session> connect(ClientModel new_client) async {
-    if (activeSessions.containsKey(new_client.name)) {
-      log("SessionManager: Session for '${new_client.name}' already active");
-      return activeSessions[new_client.name]!;
+  Future<Session> connect(ClientModel newClient) async {
+    if (activeSessions.containsKey(newClient.name)) {
+      log("SessionManager: Session for '${newClient.name}' already active");
+      return activeSessions[newClient.name]!;
     }
 
-    var serializer = _getSerializer(new_client.serializer);
+    var serializer = _getSerializer(newClient.serializer);
 
     Client client;
-    if (new_client.authmethod == "ticket") {
+    if (newClient.authmethod == "ticket") {
       client = Client(
         serializer: serializer,
-        authenticator: TicketAuthenticator(new_client.authid, {}, new_client.secret),
+        authenticator: TicketAuthenticator(newClient.authid, {}, newClient.secret),
       );
-    } else if (new_client.authmethod == "wamp-cra") {
+    } else if (newClient.authmethod == "wamp-cra") {
       client = Client(
         serializer: serializer,
-        authenticator: WAMPCRAAuthenticator(new_client.authid, {}, new_client.secret),
+        authenticator: WAMPCRAAuthenticator(newClient.authid, {}, newClient.secret),
       );
-    } else if (new_client.authmethod == "cryptoSign") {
+    } else if (newClient.authmethod == "cryptoSign") {
       client = Client(
         serializer: serializer,
-        authenticator: CryptoSignAuthenticator(new_client.authid, {}, new_client.secret),
+        authenticator: CryptoSignAuthenticator(newClient.authid, {}, newClient.secret),
       );
-    } else if (new_client.authmethod == "anonymous") {
+    } else if (newClient.authmethod == "anonymous") {
       client = Client(
         serializer: serializer,
-        authenticator: AnonymousAuthenticator(new_client.authid),
+        authenticator: AnonymousAuthenticator(newClient.authid),
       );
     } else {
       client = Client(serializer: serializer);
     }
 
-    final session = await client.connect(new_client.uri, new_client.realm);
-    activeSessions[new_client.name] = session;
-    clientSessions[new_client.name] = true;
+    final session = await client.connect(newClient.uri, newClient.realm);
+    activeSessions[newClient.name] = session;
+    clientSessions[newClient.name] = true;
     await saveClientState();
-    log("SessionManager: Connected session for '${new_client.name}'");
+    log("SessionManager: Connected session for '${newClient.name}'");
     return session;
   }
 

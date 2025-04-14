@@ -9,7 +9,7 @@ class ActionController extends GetxController {
   ActionController() {
     uriController = TextEditingController();
   }
-  Rx<ClientModel?> ClientClient = Rx<ClientModel?>(null);
+  Rx<ClientModel?> selectedClient = Rx<ClientModel?>(null);
   RxString uri = "".obs;
   RxString selectedWampMethod = "".obs;
   RxString logsMessage = "".obs;
@@ -31,7 +31,7 @@ class ActionController extends GetxController {
   }
 
   Future<void> setSelectedClient(ClientModel client) async {
-    ClientClient.value = client;
+    selectedClient.value = client;
     if (!clientController.isConnected(client) && (clientController.clientSessions[client.name] ?? false)) {
       await clientController.connect(client);
     }
@@ -52,7 +52,7 @@ class ActionController extends GetxController {
     List<String> args,
     Map<String, String> kwArgs,
   ) async {
-    if (ClientClient.value == null) {
+    if (selectedClient.value == null) {
       _addLog("Please select a client first.");
       return;
     }
@@ -80,9 +80,9 @@ class ActionController extends GetxController {
         kwArgs.clear();
       }
 
-      final session = clientController.isConnected(ClientClient.value!)
-          ? clientController.activeSessions[ClientClient.value!.name]!
-          : await clientController.connect(ClientClient.value!);
+      final session = clientController.isConnected(selectedClient.value!)
+          ? clientController.activeSessions[selectedClient.value!.name]!
+          : await clientController.connect(selectedClient.value!);
 
       switch (actionType) {
         case "Call":

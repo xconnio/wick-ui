@@ -94,7 +94,7 @@ class ActionView extends StatelessWidget {
   Widget _buildUriBar(
     int tabKey,
     ActionController actionController,
-      ClientController clientController,
+    ClientController clientController,
   ) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final bool isMobile =
@@ -172,7 +172,7 @@ class ActionView extends StatelessWidget {
       return DropdownButtonFormField<ClientModel>(
         isExpanded: true,
         hint: const Text("Select Client", style: TextStyle(color: Colors.grey)),
-        value: actionController.ClientClient.value,
+        value: actionController.selectedClient.value,
         style: const TextStyle(color: Colors.white),
         dropdownColor: Colors.grey.shade800,
         onChanged: (ClientModel? newValue) async {
