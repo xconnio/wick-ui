@@ -5,7 +5,7 @@ import "package:flutter/foundation.dart" show kIsWeb;
 import "package:ini/ini.dart";
 import "package:path_provider/path_provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
-import "package:wick_ui/app/data/models/profile_model.dart";
+import "package:wick_ui/app/data/models/client_model.dart";
 
 mixin StorageManager {
   static Future<String> _getConfigFilePath() async {
@@ -21,30 +21,30 @@ mixin StorageManager {
       return "${configDir.path}/config";
     } else {
       final directory = await getApplicationDocumentsDirectory();
-      return "${directory.path}/profiles.ini";
+      return "${directory.path}/clients.ini";
     }
   }
 
-  static Future<void> saveProfiles(List<ProfileModel> profiles) async {
+  static Future<void> saveClients(List<ClientModel> clients) async {
     if (kIsWeb) {
       final prefs = await SharedPreferences.getInstance();
-      final profilesList = profiles.map((p) => p.toJson()).toList();
-      await prefs.setString("profiles", jsonEncode(profilesList));
+      final clientsList = clients.map((p) => p.toJson()).toList();
+      await prefs.setString("clients", jsonEncode(clientsList));
     } else {
       final filePath = await _getConfigFilePath();
       final file = File(filePath);
       var config = Config();
 
-      for (final profile in profiles) {
-        var section = "profile ${profile.name}";
+      for (final client in clients) {
+        var section = "client ${client.name}";
         config
           ..addSection(section)
-          ..set(section, "uri", profile.uri)
-          ..set(section, "realm", profile.realm)
-          ..set(section, "serializer", profile.serializer)
-          ..set(section, "authmethod", profile.authmethod)
-          ..set(section, "secret", profile.secret)
-          ..set(section, "authid", profile.authid);
+          ..set(section, "uri", client.uri)
+          ..set(section, "realm", client.realm)
+          ..set(section, "serializer", client.serializer)
+          ..set(section, "authmethod", client.authmethod)
+          ..set(section, "secret", client.secret)
+          ..set(section, "authid", client.authid);
       }
 
       final configString = config.toString();
@@ -59,13 +59,13 @@ mixin StorageManager {
     }
   }
 
-  static Future<List<ProfileModel>> loadProfiles() async {
+  static Future<List<ClientModel>> loadClients() async {
     if (kIsWeb) {
       final prefs = await SharedPreferences.getInstance();
-      final profilesString = prefs.getString("profiles");
-      if (profilesString != null) {
-        final profilesJson = jsonDecode(profilesString) as List;
-        return profilesJson.map((profileJson) => ProfileModel.fromJson(profileJson)).toList();
+      final clientsString = prefs.getString("clients");
+      if (clientsString != null) {
+        final clientsJson = jsonDecode(clientsString) as List;
+        return clientsJson.map((clientJson) => ClientModel.fromJson(clientJson)).toList();
       }
     } else {
       final filePath = await _getConfigFilePath();
@@ -73,8 +73,8 @@ mixin StorageManager {
       if (file.existsSync()) {
         var config = Config.fromStrings(await file.readAsLines());
         return config.sections().map((section) {
-          return ProfileModel(
-            name: section.replaceFirst("profile ", ""),
+          return ClientModel(
+            name: section.replaceFirst("client ", ""),
             uri: config.get(section, "uri") ?? "",
             realm: config.get(section, "realm") ?? "",
             serializer: config.get(section, "serializer") ?? "",

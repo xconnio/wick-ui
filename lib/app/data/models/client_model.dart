@@ -1,5 +1,5 @@
-class ProfileModel {
-  ProfileModel({
+class ClientModel {
+  ClientModel({
     required this.name,
     required this.uri,
     required this.realm,
@@ -9,7 +9,7 @@ class ProfileModel {
     required this.secret,
   });
 
-  factory ProfileModel.fromJson(Map<String, dynamic> json) => ProfileModel(
+  factory ClientModel.fromJson(Map<String, dynamic> json) => ClientModel(
         name: json["name"],
         uri: json["uri"],
         realm: json["realm"],

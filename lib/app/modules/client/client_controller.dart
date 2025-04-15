@@ -1,120 +1,120 @@
 import "dart:developer";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
-import "package:wick_ui/app/data/models/profile_model.dart";
+import "package:wick_ui/app/data/models/client_model.dart";
 import "package:wick_ui/app/modules/router/router_controller.dart";
 import "package:wick_ui/utils/session_manager.dart";
 import "package:wick_ui/utils/state_manager.dart";
 import "package:wick_ui/utils/storage_manager.dart";
 
-class ProfileController extends GetxController with StateManager, SessionManager {
-  RxList<ProfileModel> profiles = <ProfileModel>[].obs;
-  RxList<ProfileModel> connectingProfiles = <ProfileModel>[].obs;
+class ClientController extends GetxController with StateManager, SessionManager {
+  RxList<ClientModel> clients = <ClientModel>[].obs;
+  RxList<ClientModel> connectingClient = <ClientModel>[].obs;
   RxMap<String, String> errorMessages = <String, String>{}.obs;
 
   @override
   Future<void> onInit() async {
     super.onInit();
-    log("ProfileController: onInit called");
+    log("ClientController: onInit called");
     await initializeState();
-    await loadProfiles();
-    await restoreSessions(profiles);
+    await loadClients();
+    await restoreSessions(clients);
   }
 
-  Future<void> saveProfiles() async {
-    await StorageManager.saveProfiles(profiles.toList());
-    log("ProfileController: Saved profiles");
+  Future<void> saveClients() async {
+    await StorageManager.saveClients(clients.toList());
+    log("ClientController: Saved Clients");
   }
 
-  Future<void> loadProfiles() async {
-    profiles.assignAll(await StorageManager.loadProfiles());
-    log("ProfileController: Loaded ${profiles.length} profiles");
+  Future<void> loadClients() async {
+    clients.assignAll(await StorageManager.loadClients());
+    log("ClientController: Loaded ${clients.length} clients");
   }
 
-  Future<void> addProfile(ProfileModel profile) async {
-    profiles.add(profile);
-    await saveProfiles();
-    log("ProfileController: Added profile '${profile.name}'");
+  Future<void> addClient(ClientModel client) async {
+    clients.add(client);
+    await saveClients();
+    log("ClientController: Added client '${client.name}'");
   }
 
-  Future<void> updateProfile(ProfileModel updatedProfile) async {
-    int index = profiles.indexWhere((p) => p.name == updatedProfile.name);
+  Future<void> updateClient(ClientModel updatedClient) async {
+    int index = clients.indexWhere((p) => p.name == updatedClient.name);
     if (index != -1) {
-      profiles[index] = updatedProfile;
-      await saveProfiles();
-      log("ProfileController: Updated profile '${updatedProfile.name}'");
+      clients[index] = updatedClient;
+      await saveClients();
+      log("ClientController: Updated client '${updatedClient.name}'");
     }
   }
 
-  Future<void> deleteProfile(ProfileModel profile) async {
-    profiles.removeWhere((p) => p.name == profile.name);
-    if (isConnected(profile)) {
-      await disconnect(profile);
+  Future<void> deleteClient(ClientModel client) async {
+    clients.removeWhere((p) => p.name == client.name);
+    if (isConnected(client)) {
+      await disconnect(client);
     }
-    connectingProfiles.remove(profile);
-    errorMessages.remove(profile.name);
-    await saveProfiles();
-    await saveProfileState();
-    log("ProfileController: Deleted profile '${profile.name}'");
+    connectingClient.remove(client);
+    errorMessages.remove(client.name);
+    await saveClients();
+    await saveClientState();
+    log("ClientController: Deleted client '${client.name}'");
   }
 
-  Future<void> toggleConnection(ProfileModel profile) async {
-    errorMessages.remove(profile.name);
-    if (isConnected(profile)) {
-      await disconnect(profile);
-      log("ProfileController: Disconnected '${profile.name}'");
+  Future<void> toggleConnection(ClientModel client) async {
+    errorMessages.remove(client.name);
+    if (isConnected(client)) {
+      await disconnect(client);
+      log("ClientController: Disconnected '${client.name}'");
     } else {
       final routerController = Get.find<RouterController>();
-      if (!(routerController.runningRouters[profile.realm] ?? false)) {
-        log("ProfileController: Router for realm '${profile.realm}' not running, skipping connection");
-        errorMessages[profile.name] = "Router not running for realm '${profile.realm}'";
+      if (!(routerController.runningRouters[client.realm] ?? false)) {
+        log("ClientController: Router for realm '${client.realm}' not running, skipping connection");
+        errorMessages[client.name] = "Router not running for realm '${client.realm}'";
         return;
       }
-      connectingProfiles.add(profile);
+      connectingClient.add(client);
       try {
-        await connect(profile);
-        log("ProfileController: Connected '${profile.name}'");
+        await connect(client);
+        log("ClientController: Connected '${client.name}'");
       } on Exception catch (e) {
-        errorMessages[profile.name] = e.toString();
-        profileSessions[profile.name] = false;
-        await saveProfileState();
-        log("ProfileController: Failed to connect '${profile.name}': $e");
+        errorMessages[client.name] = e.toString();
+        clientSessions[client.name] = false;
+        await saveClientState();
+        log("ClientController: Failed to connect '${client.name}': $e");
       } finally {
-        connectingProfiles.remove(profile);
+        connectingClient.remove(client);
         update();
       }
     }
   }
 
-  Future<void> disconnectAllProfiles() async {
-    log("ProfileController: Disconnecting all profiles");
+  Future<void> disconnectAllClients() async {
+    log("ClientController: Disconnecting all clients");
     await clearAllSessions();
-    log("ProfileController: All profiles disconnected and state cleared");
+    log("ClientController: All clients disconnected and state cleared");
   }
 
-  Future<void> createProfile({ProfileModel? profile}) async {
+  Future<void> createClient({ClientModel? client}) async {
     final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController(text: profile?.name ?? "");
+    final nameController = TextEditingController(text: client?.name ?? "");
     final uriController = TextEditingController(
-      text: profile?.uri != null
-          ? profile!.uri.replaceAll(RegExp("^(ws://|wss://)"), "").replaceAll(RegExp(r":\d+/ws$"), "")
+      text: client?.uri != null
+          ? client!.uri.replaceAll(RegExp("^(ws://|wss://)"), "").replaceAll(RegExp(r":\d+/ws$"), "")
           : "localhost",
     );
     final portController = TextEditingController(
-      text: profile?.uri != null ? RegExp(r":(\d+)/ws$").firstMatch(profile!.uri)?.group(1) ?? "8080" : "8080",
+      text: client?.uri != null ? RegExp(r":(\d+)/ws$").firstMatch(client!.uri)?.group(1) ?? "8080" : "8080",
     );
-    final realmController = TextEditingController(text: profile?.realm ?? "");
-    final authidController = TextEditingController(text: profile?.authid ?? "");
-    final secretController = TextEditingController(text: profile?.secret ?? "");
+    final realmController = TextEditingController(text: client?.realm ?? "");
+    final authidController = TextEditingController(text: client?.authid ?? "");
+    final secretController = TextEditingController(text: client?.secret ?? "");
 
     final serializers = ["json", "msgpack", "cbor"];
     final authMethods = ["anonymous", "ticket", "wamp-cra", "cryptoSign"];
 
     var selectedSerializer =
-        serializers.contains(profile?.serializer) ? profile?.serializer ?? serializers.first : serializers.first;
+        serializers.contains(client?.serializer) ? client?.serializer ?? serializers.first : serializers.first;
     var selectedAuthMethod =
-        authMethods.contains(profile?.authmethod) ? profile?.authmethod ?? authMethods.first : authMethods.first;
-    var selectedProtocol = (profile?.uri.startsWith("wss://") ?? false) ? "wss://" : "ws://";
+        authMethods.contains(client?.authmethod) ? client?.authmethod ?? authMethods.first : authMethods.first;
+    var selectedProtocol = (client?.uri.startsWith("wss://") ?? false) ? "wss://" : "ws://";
 
     await Get.dialog(
       StatefulBuilder(
@@ -124,7 +124,7 @@ class ProfileController extends GetxController with StateManager, SessionManager
               isDesktop ? MediaQuery.of(context).size.width * 0.6 : MediaQuery.of(context).size.width * 0.9;
 
           return AlertDialog(
-            title: Text(profile == null ? "Create Profile" : "Update Profile"),
+            title: Text(client == null ? "Create Client" : "Update Client"),
             content: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
               child: SizedBox(
@@ -138,14 +138,14 @@ class ProfileController extends GetxController with StateManager, SessionManager
                       children: [
                         _buildTextField(
                           controller: nameController,
-                          labelText: "profile name",
+                          labelText: "client name",
                           context: context,
                           validator: (value) {
                             if (value!.isEmpty) {
                               return "please enter a name";
                             }
-                            if (profiles.any((p) => p.name == value && p.name != profile?.name)) {
-                              return "profile name already exists. choose a different name.";
+                            if (clients.any((p) => p.name == value && p.name != client?.name)) {
+                              return "client name already exists. choose a different name.";
                             }
                             return null;
                           },
@@ -428,7 +428,7 @@ class ProfileController extends GetxController with StateManager, SessionManager
                   if (formKey.currentState!.validate()) {
                     Get.back();
                     final fullUri = "$selectedProtocol${uriController.text}:${portController.text}/ws";
-                    final newProfile = ProfileModel(
+                    final newClient = ClientModel(
                       name: nameController.text,
                       uri: fullUri,
                       realm: realmController.text,
@@ -437,11 +437,11 @@ class ProfileController extends GetxController with StateManager, SessionManager
                       authmethod: selectedAuthMethod,
                       secret: secretController.text,
                     );
-                    if (profile == null) {
-                      await addProfile(newProfile);
-                      await toggleConnection(newProfile);
+                    if (client == null) {
+                      await addClient(newClient);
+                      await toggleConnection(newClient);
                     } else {
-                      await updateProfile(newProfile);
+                      await updateClient(newClient);
                     }
                     update();
                   }
