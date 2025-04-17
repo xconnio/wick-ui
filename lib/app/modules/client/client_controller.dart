@@ -95,14 +95,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
   Future<void> createClient({ClientModel? client}) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: client?.name ?? "");
-    final uriController = TextEditingController(
-      text: client?.uri != null
-          ? client!.uri.replaceAll(RegExp("^(ws://|wss://)"), "").replaceAll(RegExp(r":\d+/ws$"), "")
-          : "localhost",
-    );
-    final portController = TextEditingController(
-      text: client?.uri != null ? RegExp(r":(\d+)/ws$").firstMatch(client!.uri)?.group(1) ?? "8080" : "8080",
-    );
+    final uriController = TextEditingController(text: client?.uri ?? "");
     final realmController = TextEditingController(text: client?.realm ?? "");
     final authidController = TextEditingController(text: client?.authid ?? "");
     final secretController = TextEditingController(text: client?.secret ?? "");
@@ -114,7 +107,6 @@ class ClientController extends GetxController with StateManager, SessionManager 
         serializers.contains(client?.serializer) ? client?.serializer ?? serializers.first : serializers.first;
     var selectedAuthMethod =
         authMethods.contains(client?.authmethod) ? client?.authmethod ?? authMethods.first : authMethods.first;
-    var selectedProtocol = (client?.uri.startsWith("wss://") ?? false) ? "wss://" : "ws://";
 
     await Get.dialog(
       StatefulBuilder(
@@ -154,82 +146,25 @@ class ClientController extends GetxController with StateManager, SessionManager 
                         if (isDesktop)
                           Row(
                             children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Radio<String>(
-                                    value: "ws://",
-                                    groupValue: selectedProtocol,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        selectedProtocol = value!;
-                                      });
-                                    },
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                  const Text("ws://"),
-                                ],
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Radio<String>(
-                                    value: "wss://",
-                                    groupValue: selectedProtocol,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        selectedProtocol = value!;
-                                      });
-                                    },
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                  const Text("wss://"),
-                                ],
-                              ),
                               Expanded(
                                 flex: 3,
                                 child: Padding(
                                   padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
                                   child: _buildTextField(
                                     controller: uriController,
-                                    labelText: "uri",
+                                    labelText: "URI",
                                     context: context,
                                     validator: (value) {
                                       if (value!.isEmpty) {
-                                        return "please enter a uri";
+                                        return "Please enter a URI";
+                                      }
+                                      if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
+                                        return "URI must start with ws:// or wss://";
                                       }
                                       return null;
                                     },
                                   ),
                                 ),
-                              ),
-                              Flexible(
-                                child: Padding(
-                                  padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-                                  child: SizedBox(
-                                    width: 100,
-                                    child: _buildTextField(
-                                      controller: portController,
-                                      labelText: "port",
-                                      context: context,
-                                      keyboardType: TextInputType.number,
-                                      validator: (value) {
-                                        if (value!.isEmpty) {
-                                          return "please enter a port";
-                                        }
-                                        if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                                          return "invalid port";
-                                        }
-                                        return null;
-                                      },
-                                      maxLength: 5,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-                                child: const Text("/ws"),
                               ),
                             ],
                           )
@@ -239,83 +174,22 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             children: [
                               Row(
                                 children: [
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Radio<String>(
-                                        value: "ws://",
-                                        groupValue: selectedProtocol,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedProtocol = value!;
-                                          });
-                                        },
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      const Text("ws://"),
-                                    ],
-                                  ),
-                                  SizedBox(width: _responsiveSpacing(context)),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Radio<String>(
-                                        value: "wss://",
-                                        groupValue: selectedProtocol,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedProtocol = value!;
-                                          });
-                                        },
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      const Text("wss://"),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: _responsiveSpacing(context) / 2),
-                              Row(
-                                children: [
                                   Expanded(
                                     flex: 3,
                                     child: _buildTextField(
                                       controller: uriController,
-                                      labelText: "uri",
+                                      labelText: "URI",
                                       context: context,
                                       validator: (value) {
                                         if (value!.isEmpty) {
-                                          return "please enter a uri";
+                                          return "Please enter a URI";
+                                        }
+                                        if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
+                                          return "URI must start with ws:// or wss://";
                                         }
                                         return null;
                                       },
                                     ),
-                                  ),
-                                  SizedBox(width: _responsiveSpacing(context) / 2),
-                                  Flexible(
-                                    child: SizedBox(
-                                      width: 100,
-                                      child: _buildTextField(
-                                        controller: portController,
-                                        labelText: "port",
-                                        context: context,
-                                        keyboardType: TextInputType.number,
-                                        validator: (value) {
-                                          if (value!.isEmpty) {
-                                            return "Please enter a port";
-                                          }
-                                          if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                                            return "invalid port";
-                                          }
-                                          return null;
-                                        },
-                                        maxLength: 5,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-                                    child: const Text("/ws"),
                                   ),
                                 ],
                               ),
@@ -427,10 +301,9 @@ class ClientController extends GetxController with StateManager, SessionManager 
                 onPressed: () async {
                   if (formKey.currentState!.validate()) {
                     Get.back();
-                    final fullUri = "$selectedProtocol${uriController.text}:${portController.text}/ws";
                     final newClient = ClientModel(
                       name: nameController.text,
-                      uri: fullUri,
+                      uri: uriController.text,
                       realm: realmController.text,
                       serializer: selectedSerializer,
                       authid: authidController.text,
