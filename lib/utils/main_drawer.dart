@@ -29,23 +29,23 @@ class MainDrawer extends StatelessWidget {
               ),
             ),
           ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text("Client"),
+            leading: const Icon(Icons.account_tree),
+            title: const Text("Actions"),
             onTap: () async {
-              await Get.offAllNamed(AppRoutes.client);
+              await Get.offAllNamed(AppRoutes.action);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.account_tree),
-            title: const Text("Action"),
+            leading: const Icon(Icons.person),
+            title: const Text("Clients"),
             onTap: () async {
-              await Get.offAllNamed(AppRoutes.action);
+              await Get.offAllNamed(AppRoutes.client);
             },
           ),
           if (!kIsWeb)
             ListTile(
               leading: const Icon(Icons.route_rounded),
-              title: const Text("Router"),
+              title: const Text("Routers"),
               onTap: () async {
                 await Get.offAllNamed(AppRoutes.router);
               },
