@@ -74,7 +74,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
             errorMessages[client.name] = "Router not running for realm '${client.realm}'";
             return;
           }
-        } catch (e) {
+        } on Exception catch (e) {
           log("ClientController: RouterController unavailable for '${client.name}': $e");
           errorMessages[client.name] = "Router unavailable. Please check router settings.";
           return;
