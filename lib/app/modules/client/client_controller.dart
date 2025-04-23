@@ -64,18 +64,38 @@ class ClientController extends GetxController with StateManager, SessionManager 
       await disconnect(client);
       log("ClientController: Disconnected '${client.name}'");
     } else {
-      final routerController = Get.find<RouterController>();
-      if (!(routerController.runningRouters[client.realm] ?? false)) {
-        log("ClientController: Router for realm '${client.realm}' not running, skipping connection");
-        errorMessages[client.name] = "Router not running for realm '${client.realm}'";
-        return;
+      bool isLocalRouter = client.uri.contains("localhost") || client.uri.contains("127.0.0.1");
+
+      if (isLocalRouter) {
+        try {
+          final routerController = Get.find<RouterController>();
+          if (!(routerController.runningRouters[client.realm] ?? false)) {
+            log("ClientController: Local router for realm '${client.realm}' not running, skipping connection");
+            errorMessages[client.name] = "Router not running for realm '${client.realm}'";
+            return;
+          }
+        } on Exception catch (e) {
+          log("ClientController: RouterController unavailable for '${client.name}': $e");
+          errorMessages[client.name] = "Router unavailable. Please check router settings.";
+          return;
+        }
+      } else {
+        if (clientSessions[client.name] == null || !clientSessions[client.name]!) {
+          log("ClientController: Session for '${client.name}' is lost or missing, attempting to create new session");
+        }
       }
+
+      log("ClientController: Attempting to connect '${client.name}' to ${client.uri}");
       connectingClient.add(client);
+
       try {
         await connect(client);
         log("ClientController: Connected '${client.name}'");
+        clientSessions[client.name] = true;
+        await saveClientState();
       } on Exception catch (e) {
-        errorMessages[client.name] = e.toString();
+        String errorMessage = e.toString();
+        errorMessages[client.name] = errorMessage;
         clientSessions[client.name] = false;
         await saveClientState();
         log("ClientController: Failed to connect '${client.name}': $e");
@@ -387,7 +407,6 @@ class ClientController extends GetxController with StateManager, SessionManager 
       maxLength: maxLength,
       onChanged: (text) {
         controller.value = controller.value.copyWith(
-          text: text.toLowerCase(),
           selection: TextSelection.collapsed(offset: text.length),
         );
       },

@@ -39,32 +39,56 @@ mixin SessionManager on StateManager {
       client = Client(serializer: serializer);
     }
 
-    final session = await client.connect(newClient.uri, newClient.realm);
-    activeSessions[newClient.name] = session;
-    clientSessions[newClient.name] = true;
-    await saveClientState();
-    log("SessionManager: Connected session for '${newClient.name}'");
-    return session;
+    try {
+      final session = await client.connect(newClient.uri, newClient.realm);
+      activeSessions[newClient.name] = session;
+      clientSessions[newClient.name] = true;
+      await saveClientState();
+      log("SessionManager: Connected session for '${newClient.name}'");
+      return session;
+    } on Exception catch (e) {
+      clientSessions[newClient.name] = false;
+      await saveClientState();
+      log("SessionManager: Failed to connect session for '${newClient.name}': $e");
+      rethrow;
+    }
   }
 
   Future<void> disconnect(ClientModel client) async {
     final session = activeSessions[client.name];
     if (session != null) {
-      await session.close();
-      activeSessions.remove(client.name);
+      try {
+        await session.close();
+        log("SessionManager: Disconnected session for '${client.name}'");
+      } on Exception catch (e) {
+        log("SessionManager: Failed to close session for '${client.name}': $e");
+      } finally {
+        activeSessions.remove(client.name);
+        clientSessions[client.name] = false;
+        await saveClientState();
+      }
+    } else {
+      log("SessionManager: No active session found for '${client.name}'");
       clientSessions[client.name] = false;
       await saveClientState();
-      log("SessionManager: Disconnected session for '${client.name}'");
     }
   }
 
   bool isConnected(ClientModel client) {
-    return activeSessions.containsKey(client.name);
+    final session = activeSessions[client.name];
+    if (session == null) {
+      return false;
+    }
+    return clientSessions[client.name] ?? false;
   }
 
   Future<void> clearAllSessions() async {
     for (final session in activeSessions.values) {
-      await session.close();
+      try {
+        await session.close();
+      } on Exception catch (e) {
+        log("SessionManager: Failed to close session during clearAllSessions: $e");
+      }
     }
     activeSessions.clear();
     clientSessions.clear();
@@ -93,6 +117,7 @@ mixin SessionManager on StateManager {
           await connect(client);
           log("SessionManager: Restored session for '${client.name}'");
         } on Exception catch (e) {
+          activeSessions.remove(client.name);
           clientSessions[client.name] = false;
           await saveClientState();
           log("SessionManager: Failed to restore session for '${client.name}': $e");
