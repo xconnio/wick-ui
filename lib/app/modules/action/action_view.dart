@@ -584,7 +584,6 @@ class ActionView extends StatelessWidget {
 }
 
 class _LogsWindowWidget extends StatefulWidget {
-
   const _LogsWindowWidget({
     required this.tabKey,
     required this.actionController,
@@ -598,8 +597,9 @@ class _LogsWindowWidget extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ActionController>("actionController", actionController))
-    ..add(IntProperty("tabKey", tabKey));
+    properties
+      ..add(DiagnosticsProperty<ActionController>("actionController", actionController))
+      ..add(IntProperty("tabKey", tabKey));
   }
 }
 
