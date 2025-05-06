@@ -584,16 +584,23 @@ class ActionView extends StatelessWidget {
 }
 
 class _LogsWindowWidget extends StatefulWidget {
-  final int tabKey;
-  final ActionController actionController;
 
   const _LogsWindowWidget({
     required this.tabKey,
     required this.actionController,
   });
+  final int tabKey;
+  final ActionController actionController;
 
   @override
   _LogsWindowWidgetState createState() => _LogsWindowWidgetState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ActionController>("actionController", actionController))
+    ..add(IntProperty("tabKey", tabKey));
+  }
 }
 
 class _LogsWindowWidgetState extends State<_LogsWindowWidget> {
@@ -650,9 +657,9 @@ class _LogsWindowWidgetState extends State<_LogsWindowWidget> {
                     ),
                   );
                 }
-                WidgetsBinding.instance.addPostFrameCallback((_) {
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
                   if (_scrollController.hasClients) {
-                    _scrollController.animateTo(
+                    await _scrollController.animateTo(
                       _scrollController.position.maxScrollExtent,
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeOut,
