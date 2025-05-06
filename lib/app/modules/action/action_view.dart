@@ -150,10 +150,10 @@ class ActionView extends StatelessWidget {
   }
 
   Widget _buildUriBar(
-      int tabKey,
-      ActionController actionController,
-      ClientController clientController,
-      ) {
+    int tabKey,
+    ActionController actionController,
+    ClientController clientController,
+  ) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final bool isMobile =
         !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
@@ -166,42 +166,7 @@ class ActionView extends StatelessWidget {
           child: Column(
             children: isMobile
                 ? [
-              TextFormField(
-                controller: actionController.uriController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "URI",
-                  hintText: "Enter WAMP URI",
-                  prefixIcon: Icon(Icons.link, size: 20),
-                ),
-                validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildDropdown(tabKey, actionController, clientController),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: _buildWampMethodButton(tabKey, formKey, actionController),
-                  ),
-                ],
-              ),
-            ]
-                : [
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildDropdown(tabKey, actionController, clientController),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 4,
-                    child: TextFormField(
+                    TextFormField(
                       controller: actionController.uriController,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
@@ -211,15 +176,50 @@ class ActionView extends StatelessWidget {
                       ),
                       validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: _buildWampMethodButton(tabKey, formKey, actionController),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _buildDropdown(tabKey, actionController, clientController),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: _buildWampMethodButton(tabKey, formKey, actionController),
+                        ),
+                      ],
+                    ),
+                  ]
+                : [
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _buildDropdown(tabKey, actionController, clientController),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 4,
+                          child: TextFormField(
+                            controller: actionController.uriController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: const InputDecoration(
+                              labelText: "URI",
+                              hintText: "Enter WAMP URI",
+                              prefixIcon: Icon(Icons.link, size: 20),
+                            ),
+                            validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: _buildWampMethodButton(tabKey, formKey, actionController),
+                        ),
+                      ],
+                    ),
+                  ],
           ),
         ),
       ),
@@ -307,18 +307,18 @@ class ActionView extends StatelessWidget {
                     onTap: actionController.isActionInProgress.value
                         ? null // Disable tap when action is in progress
                         : () async {
-                      if (formKey.currentState?.validate() ?? false) {
-                        List<String> args = paramsController.getArgs();
-                        Map<String, String> kwArgs = paramsController.getKwArgs();
+                            if (formKey.currentState?.validate() ?? false) {
+                              List<String> args = paramsController.getArgs();
+                              Map<String, String> kwArgs = paramsController.getKwArgs();
 
-                        await actionController.performAction(
-                          actionController.selectedMethod.value.toLowerCase(),
-                          actionController.uriController.text,
-                          args,
-                          kwArgs,
-                        );
-                      }
-                    },
+                              await actionController.performAction(
+                                actionController.selectedMethod.value.toLowerCase(),
+                                actionController.uriController.text,
+                                args,
+                                kwArgs,
+                              );
+                            }
+                          },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Center(
@@ -346,18 +346,18 @@ class ActionView extends StatelessWidget {
                 onSelected: actionController.isActionInProgress.value
                     ? null // Disable menu when action is in progress
                     : (String newValue) async {
-                  if (formKey.currentState?.validate() ?? false) {
-                    List<String> args = paramsController.getArgs();
-                    Map<String, String> kwArgs = paramsController.getKwArgs();
+                        if (formKey.currentState?.validate() ?? false) {
+                          List<String> args = paramsController.getArgs();
+                          Map<String, String> kwArgs = paramsController.getKwArgs();
 
-                    await actionController.performAction(
-                      newValue.toLowerCase(),
-                      actionController.uriController.text,
-                      args,
-                      kwArgs,
-                    );
-                  }
-                },
+                          await actionController.performAction(
+                            newValue.toLowerCase(),
+                            actionController.uriController.text,
+                            args,
+                            kwArgs,
+                          );
+                        }
+                      },
                 itemBuilder: (context) {
                   return wampMethods.map((method) {
                     return PopupMenuItem<String>(
@@ -495,60 +495,60 @@ class ActionView extends StatelessWidget {
                         Expanded(
                           child: param.type == "arg"
                               ? TextFormField(
-                            controller: param.argController,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: "Argument ${index + 1}",
-                              hintText: "Enter value",
-                            ),
-                          )
-                              : isMobile
-                              ? Column(
-                            children: [
-                              TextFormField(
-                                controller: param.keyController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  labelText: "Key",
-                                  hintText: "Enter key name",
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                controller: param.valueController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  labelText: "Value",
-                                  hintText: "Enter value",
-                                ),
-                              ),
-                            ],
-                          )
-                              : Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: param.keyController,
+                                  controller: param.argController,
                                   style: const TextStyle(color: Colors.white),
-                                  decoration: const InputDecoration(
-                                    labelText: "Key",
-                                    hintText: "Enter key name",
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: param.valueController,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: const InputDecoration(
-                                    labelText: "Value",
+                                  decoration: InputDecoration(
+                                    labelText: "Argument ${index + 1}",
                                     hintText: "Enter value",
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
+                                )
+                              : isMobile
+                                  ? Column(
+                                      children: [
+                                        TextFormField(
+                                          controller: param.keyController,
+                                          style: const TextStyle(color: Colors.white),
+                                          decoration: const InputDecoration(
+                                            labelText: "Key",
+                                            hintText: "Enter key name",
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        TextFormField(
+                                          controller: param.valueController,
+                                          style: const TextStyle(color: Colors.white),
+                                          decoration: const InputDecoration(
+                                            labelText: "Value",
+                                            hintText: "Enter value",
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: param.keyController,
+                                            style: const TextStyle(color: Colors.white),
+                                            decoration: const InputDecoration(
+                                              labelText: "Key",
+                                              hintText: "Enter key name",
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: param.valueController,
+                                            style: const TextStyle(color: Colors.white),
+                                            decoration: const InputDecoration(
+                                              labelText: "Value",
+                                              hintText: "Enter value",
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                         ),
                         IconButton(
                           icon: Icon(
