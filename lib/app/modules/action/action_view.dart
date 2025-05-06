@@ -3,9 +3,8 @@ import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/client_model.dart";
 import "package:wick_ui/app/modules/action/action_controller.dart";
+import "package:wick_ui/app/modules/action/action_params_controller.dart";
 import "package:wick_ui/app/modules/client/client_controller.dart";
-import "package:wick_ui/utils/args_controller.dart";
-import "package:wick_ui/utils/kwargs_controller.dart";
 import "package:wick_ui/utils/responsive_scaffold.dart";
 import "package:wick_ui/utils/status_indicator.dart";
 import "package:wick_ui/utils/tab_container_state.dart";
@@ -22,22 +21,81 @@ class ActionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double screenHeight = MediaQuery.of(context).size.height;
-
-    return ResponsiveScaffold(
-      title: "Actions",
-      body: TabContainerWidget(
-        buildScreen: (context, tabKey) => _buildScreen(context, tabKey, screenHeight),
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF121212), // Darker background
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E), // Slightly lighter than scaffold
+          foregroundColor: Colors.white,
+          elevation: 2,
+        ),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
+          titleLarge: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey.shade900.withAlpha((0.5 * 255).round()),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade700),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
+          ),
+          labelStyle: TextStyle(color: Colors.grey.shade400),
+          hintStyle: TextStyle(color: Colors.grey.shade500),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            elevation: 2,
+          ),
+        ),
+        cardTheme: CardTheme(
+          color: Colors.grey.shade900,
+          elevation: 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          margin: EdgeInsets.zero,
+        ),
+        dividerTheme: DividerThemeData(
+          color: Colors.grey.shade800,
+          thickness: 1,
+          space: 1,
+        ),
+      ),
+      child: ResponsiveScaffold(
+        title: "Actions",
+        body: TabContainerWidget(
+          buildScreen: _buildScreen,
+        ),
       ),
     );
   }
 
-  Widget _buildScreen(BuildContext context, int tabKey, double screenHeight) {
-    if (!Get.isRegistered<ArgsController>(tag: "args_$tabKey")) {
-      Get.put(ArgsController(), tag: "args_$tabKey");
-    }
-    if (!Get.isRegistered<KwargsController>(tag: "kwargs_$tabKey")) {
-      Get.put(KwargsController(), tag: "kwargs_$tabKey");
+  Widget _buildScreen(BuildContext context, int tabKey) {
+    if (!Get.isRegistered<ActionParamsController>(tag: "params_$tabKey")) {
+      Get.put(ActionParamsController(), tag: "params_$tabKey");
     }
     if (!Get.isRegistered<ActionController>(tag: "action_$tabKey")) {
       Get.put(ActionController(), tag: "action_$tabKey");
@@ -47,45 +105,45 @@ class ActionView extends StatelessWidget {
     final ClientController clientController = Get.find<ClientController>();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: _buildUriBar(tabKey, actionController, clientController),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 8)),
-          SliverToBoxAdapter(child: _buildLogsWindow(tabKey, screenHeight)),
-          const SliverToBoxAdapter(child: SizedBox(height: 8)),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: screenHeight * 0.4,
-              ),
-              child: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  if (constraints.maxWidth >= 800) {
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: _buildArgsTab(tabKey)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildKwargsTab(tabKey)),
-                      ],
-                    );
-                  } else {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildArgsTab(tabKey),
-                        const SizedBox(height: 8),
-                        _buildKwargsTab(tabKey),
-                      ],
-                    );
-                  }
-                },
-              ),
-            ),
+            child: Obx(() {
+              if (actionController.errorMessage.value.isNotEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade900.withAlpha((0.3 * 255).round()),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.redAccent),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          actionController.errorMessage.value,
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
           ),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          SliverToBoxAdapter(child: _buildParamsSection(tabKey, actionController)),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          SliverToBoxAdapter(child: _buildLogsWindow(tabKey, actionController)),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
     );
@@ -100,68 +158,69 @@ class ActionView extends StatelessWidget {
     final bool isMobile =
         !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
 
-    return Form(
-      key: formKey,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade600),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: isMobile
-              ? [
-                  TextFormField(
-                    controller: actionController.uriController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelText: "URI",
-                      labelStyle: TextStyle(color: Colors.grey),
-                      border: InputBorder.none,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Form(
+          key: formKey,
+          child: Column(
+            children: isMobile
+                ? [
+                    TextFormField(
+                      controller: actionController.uriController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: "URI",
+                        hintText: "Enter WAMP URI",
+                        prefixIcon: Icon(Icons.link, size: 20),
+                      ),
+                      validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
                     ),
-                    validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: _buildDropdown(tabKey, actionController, clientController),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: _buildWampMethodButton(tabKey, formKey),
-                      ),
-                    ],
-                  ),
-                ]
-              : [
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: _buildDropdown(tabKey, actionController, clientController),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 4,
-                        child: TextFormField(
-                          controller: actionController.uriController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
-                            labelText: "URI",
-                            labelStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                          ),
-                          validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _buildDropdown(tabKey, actionController, clientController),
                         ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: _buildWampMethodButton(tabKey, formKey),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: _buildWampMethodButton(tabKey, formKey, actionController),
+                        ),
+                      ],
+                    ),
+                  ]
+                : [
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _buildDropdown(tabKey, actionController, clientController),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 4,
+                          child: TextFormField(
+                            controller: actionController.uriController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: const InputDecoration(
+                              labelText: "URI",
+                              hintText: "Enter WAMP URI",
+                              prefixIcon: Icon(Icons.link, size: 20),
+                            ),
+                            validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: _buildWampMethodButton(tabKey, formKey, actionController),
+                        ),
+                      ],
+                    ),
+                  ],
+          ),
         ),
       ),
     );
@@ -171,12 +230,21 @@ class ActionView extends StatelessWidget {
     return Obx(() {
       return DropdownButtonFormField<ClientModel>(
         isExpanded: true,
-        hint: const Text("Select Client", style: TextStyle(color: Colors.grey)),
+        hint: const Text("Select a client", style: TextStyle(color: Colors.grey)),
         value: actionController.selectedClient.value,
         style: const TextStyle(color: Colors.white),
-        dropdownColor: Colors.grey.shade800,
+        dropdownColor: Colors.grey.shade900,
+        icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.person_outline, size: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
         onChanged: (ClientModel? newValue) async {
-          await actionController.setSelectedClient(newValue!);
+          if (newValue != null) {
+            await actionController.setSelectedClient(newValue);
+          }
         },
         validator: (value) => value == null ? "Please select a client." : null,
         items: clientController.clients.map((ClientModel client) {
@@ -203,306 +271,428 @@ class ActionView extends StatelessWidget {
     });
   }
 
-  Widget _buildWampMethodButton(int tabKey, GlobalKey<FormState> formKey) {
-    final ActionController actionController = Get.find<ActionController>(tag: "action_$tabKey");
-    final ArgsController argsController = Get.find<ArgsController>(tag: "args_$tabKey");
-    final KwargsController kwargsController = Get.find<KwargsController>(tag: "kwargs_$tabKey");
+  Widget _buildWampMethodButton(int tabKey, GlobalKey<FormState> formKey, ActionController actionController) {
+    final ActionParamsController paramsController = Get.find<ActionParamsController>(tag: "params_$tabKey");
 
     return Obx(() {
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade600),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: InkWell(
-                onTap: () async {
-                  if (formKey.currentState?.validate() ?? false) {
-                    List<String> args = argsController.controllers.map((c) => c.text).toList();
-                    Map<String, String> kwArgs = {
-                      for (final entry in kwargsController.tableData) entry.key: entry.value,
-                    };
+      return SizedBox(
+        height: 56, // Match the height of other form fields
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.blueAccent.shade700,
+                Colors.blueAccent.shade400,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blueAccent.withAlpha((0.3 * 255).round()),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                    onTap: actionController.isActionInProgress.value
+                        ? null // Disable tap when action is in progress
+                        : () async {
+                            if (formKey.currentState?.validate() ?? false) {
+                              List<String> args = paramsController.getArgs();
+                              Map<String, String> kwArgs = paramsController.getKwArgs();
 
-                    await actionController.performAction(
-                      actionController.selectedWampMethod.value.isNotEmpty
-                          ? actionController.selectedWampMethod.value
-                          : wampMethods.first,
-                      actionController.uriController.text,
-                      args,
-                      kwArgs,
-                    );
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        actionController.selectedWampMethod.value.isNotEmpty
-                            ? actionController.selectedWampMethod.value
-                            : wampMethods.first,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
+                              await actionController.performAction(
+                                actionController.selectedMethod.value.toLowerCase(),
+                                actionController.uriController.text,
+                                args,
+                                kwArgs,
+                              );
+                            }
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Text(
+                          actionController.selectedMethod.value,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: actionController.isActionInProgress.value
+                                ? Colors.grey.shade400 // Dimmed color when disabled
+                                : Colors.white,
+                          ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
+              Container(
+                width: 1,
+                height: 24,
+                color: Colors.white.withAlpha((0.3 * 255).round()),
+              ),
+              PopupMenuButton<String>(
+                onSelected: actionController.isActionInProgress.value
+                    ? null // Disable menu when action is in progress
+                    : (String newValue) async {
+                        if (formKey.currentState?.validate() ?? false) {
+                          List<String> args = paramsController.getArgs();
+                          Map<String, String> kwArgs = paramsController.getKwArgs();
+
+                          await actionController.performAction(
+                            newValue.toLowerCase(),
+                            actionController.uriController.text,
+                            args,
+                            kwArgs,
+                          );
+                        }
+                      },
+                itemBuilder: (context) {
+                  return wampMethods.map((method) {
+                    return PopupMenuItem<String>(
+                      value: method,
+                      child: Text(method, style: const TextStyle(color: Colors.white)),
+                    );
+                  }).toList();
+                },
+                color: Colors.grey.shade900,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Colors.grey.shade700),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: const Icon(Icons.arrow_drop_down, size: 24, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildParamsSection(int tabKey, ActionController actionController) {
+    final ActionParamsController paramsController = Get.find<ActionParamsController>(tag: "params_$tabKey");
+    final bool isMobile =
+        !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Arguments",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (String type) {
+                    paramsController.addParam(type.toLowerCase());
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<String>(
+                      value: "arg",
+                      child: Row(
+                        children: [
+                          Icon(Icons.add, size: 18),
+                          SizedBox(width: 8),
+                          Text("Add Argument"),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: "kwarg",
+                      child: Row(
+                        children: [
+                          Icon(Icons.add, size: 18),
+                          SizedBox(width: 8),
+                          Text("Add Keyword Argument"),
+                        ],
+                      ),
+                    ),
+                  ],
+                  color: Colors.grey.shade900,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withAlpha((0.2 * 255).round()),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.add, size: 18, color: Colors.blueAccent),
+                  ),
+                ),
+              ],
             ),
-            PopupMenuButton<String>(
-              onSelected: (String newValue) {
-                actionController.selectedWampMethod.value = newValue;
-              },
-              itemBuilder: (context) {
-                return wampMethods.map((method) {
-                  return PopupMenuItem<String>(
-                    value: method,
-                    child: Text(method, style: const TextStyle(color: Colors.white)),
+            const SizedBox(height: 8),
+            Obx(() {
+              if (paramsController.params.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          "No arguments added",
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Add arguments or keyword arguments to begin",
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return Column(
+                children: List.generate(paramsController.params.length, (index) {
+                  final param = paramsController.params[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          margin: const EdgeInsets.only(right: 8, top: 8),
+                          decoration: BoxDecoration(
+                            color: param.type == "arg"
+                                ? Colors.blueAccent.withAlpha((0.2 * 255).round())
+                                : Colors.purpleAccent.withAlpha((0.2 * 255).round()),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              param.type == "arg" ? "A" : "K",
+                              style: TextStyle(
+                                color: param.type == "arg" ? Colors.blueAccent : Colors.purpleAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: param.type == "arg"
+                              ? TextFormField(
+                                  controller: param.argController,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    labelText: "Argument ${index + 1}",
+                                    hintText: "Enter value",
+                                  ),
+                                )
+                              : isMobile
+                                  ? Column(
+                                      children: [
+                                        TextFormField(
+                                          controller: param.keyController,
+                                          style: const TextStyle(color: Colors.white),
+                                          decoration: const InputDecoration(
+                                            labelText: "Key",
+                                            hintText: "Enter key name",
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        TextFormField(
+                                          controller: param.valueController,
+                                          style: const TextStyle(color: Colors.white),
+                                          decoration: const InputDecoration(
+                                            labelText: "Value",
+                                            hintText: "Enter value",
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: param.keyController,
+                                            style: const TextStyle(color: Colors.white),
+                                            decoration: const InputDecoration(
+                                              labelText: "Key",
+                                              hintText: "Enter key name",
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller: param.valueController,
+                                            style: const TextStyle(color: Colors.white),
+                                            decoration: const InputDecoration(
+                                              labelText: "Value",
+                                              hintText: "Enter value",
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent.withAlpha((0.8 * 255).round()),
+                          ),
+                          onPressed: () => paramsController.removeParam(index),
+                        ),
+                      ],
+                    ),
                   );
-                }).toList();
-              },
-              color: Colors.grey.shade800,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: const BoxDecoration(
-                  border: Border(left: BorderSide(color: Colors.grey)),
-                ),
-                child: const Icon(Icons.arrow_drop_down, size: 24, color: Colors.white),
-              ),
-            ),
+                }),
+              );
+            }),
           ],
         ),
-      );
-    });
+      ),
+    );
   }
 
-  Widget _buildArgsTab(int tabKey) {
-    final ArgsController argsController = Get.find<ArgsController>(tag: "args_$tabKey");
-
-    return Obx(() {
-      return Container(
-        height: 200,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade600),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Args", style: TextStyle(color: Colors.white)),
-                  IconButton(
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    onPressed: argsController.addController,
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: ListView.separated(
-                  itemCount: argsController.controllers.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, i) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: argsController.controllers[i],
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: "Args ${i + 1}",
-                              labelStyle: const TextStyle(color: Colors.grey),
-                              border: const OutlineInputBorder(),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.grey.shade600),
-                              ),
-                              focusedBorder: const OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.white),
-                          onPressed:
-                              argsController.controllers.length > 1 ? () => argsController.removeController(i) : null,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _buildKwargsTab(int tabKey) {
-    final KwargsController kwargsController = Get.find<KwargsController>(tag: "kwargs_$tabKey");
-
-    return Obx(() {
-      return Container(
-        height: 200, // Fixed height to match screenshot
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade600),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Kwargs", style: TextStyle(color: Colors.white)),
-                  IconButton(
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    onPressed: () {
-                      kwargsController.addRow(const MapEntry("", ""));
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: ListView.separated(
-                  itemCount: kwargsController.tableData.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, i) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: kwargsController.tableData[i].key,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: "Key",
-                              labelStyle: const TextStyle(color: Colors.grey),
-                              border: const OutlineInputBorder(),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.grey.shade600),
-                              ),
-                              focusedBorder: const OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
-                              ),
-                            ),
-                            onChanged: (value) {
-                              final updatedEntry = MapEntry(
-                                value,
-                                kwargsController.tableData[i].value,
-                              );
-                              kwargsController.updateRow(i, updatedEntry);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: kwargsController.tableData[i].value,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: "Value",
-                              labelStyle: const TextStyle(color: Colors.grey),
-                              border: const OutlineInputBorder(),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.grey.shade600),
-                              ),
-                              focusedBorder: const OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
-                              ),
-                            ),
-                            onChanged: (value) {
-                              final updatedEntry = MapEntry(
-                                kwargsController.tableData[i].key,
-                                value,
-                              );
-                              kwargsController.updateRow(i, updatedEntry);
-                            },
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.white),
-                          onPressed: kwargsController.tableData.length > 1 ? () => kwargsController.removeRow(i) : null,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _buildLogsWindow(int tabKey, double screenHeight) {
-    if (!Get.isRegistered<ScrollController>(tag: "logs_$tabKey")) {
-      Get.put(ScrollController(), tag: "logs_$tabKey");
-    }
-    final ScrollController scrollController = Get.find<ScrollController>(tag: "logs_$tabKey");
-    final ActionController actionController = Get.find<ActionController>(tag: "action_$tabKey");
-
-    return Obx(() {
-      final Orientation orientation = MediaQuery.of(Get.context!).orientation;
-      final double logsHeight = orientation == Orientation.portrait
-          ? (screenHeight <= 600 ? screenHeight * 0.5 : screenHeight * 0.1)
-          : screenHeight * 0.2;
-      return Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade600),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        width: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(4),
-              child: Text(
-                "Logs",
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-            SizedBox(
-              height: logsHeight,
-              child: ListView(
-                controller: scrollController,
-                children: [
-                  Text(
-                    actionController.logsMessage.value,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    });
+  Widget _buildLogsWindow(int tabKey, ActionController actionController) {
+    return _LogsWindowWidget(
+      tabKey: tabKey,
+      actionController: actionController,
+    );
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(IterableProperty<String>("wampMethods", wampMethods));
+  }
+}
+
+class _LogsWindowWidget extends StatefulWidget {
+  const _LogsWindowWidget({
+    required this.tabKey,
+    required this.actionController,
+  });
+  final int tabKey;
+  final ActionController actionController;
+
+  @override
+  _LogsWindowWidgetState createState() => _LogsWindowWidgetState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<ActionController>("actionController", actionController))
+      ..add(IntProperty("tabKey", tabKey));
+  }
+}
+
+class _LogsWindowWidgetState extends State<_LogsWindowWidget> {
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  "Execution Logs",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.clear_all, size: 20, color: Colors.grey.shade400),
+                  onPressed: widget.actionController.clearLogs,
+                  tooltip: "Clear logs",
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(minHeight: 120, maxHeight: 300),
+              decoration: BoxDecoration(
+                color: Colors.black.withAlpha((0.3 * 255).round()),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Obx(() {
+                if (widget.actionController.logs.isEmpty) {
+                  return Center(
+                    child: Text(
+                      "No logs yet",
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  );
+                }
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                  if (_scrollController.hasClients) {
+                    await _scrollController.animateTo(
+                      _scrollController.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                    );
+                  }
+                });
+                return ListView.builder(
+                  controller: _scrollController,
+                  shrinkWrap: true,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: widget.actionController.logs.length,
+                  itemBuilder: (context, index) {
+                    final log = widget.actionController.logs[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        log,
+                        style: TextStyle(
+                          color: log.toLowerCase().contains("error")
+                              ? Colors.redAccent
+                              : Colors.white.withAlpha((0.8 * 255).round()),
+                          fontSize: 13,
+                          fontFamily: "monospace",
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

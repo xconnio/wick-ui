@@ -1,4 +1,5 @@
-import "dart:developer" as dev;
+import "dart:async";
+import "dart:developer";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/client_model.dart";
@@ -8,42 +9,85 @@ import "package:xconn/xconn.dart";
 class ActionController extends GetxController {
   ActionController() {
     uriController = TextEditingController();
+    trySetInitialClient();
   }
-  Rx<ClientModel?> selectedClient = Rx<ClientModel?>(null);
-  RxString uri = "".obs;
-  RxString selectedWampMethod = "".obs;
-  RxString logsMessage = "".obs;
+
+  late final TextEditingController uriController;
+  final Rx<ClientModel?> selectedClient = Rx<ClientModel?>(null);
+  final RxList<String> logs = <String>[].obs;
+  final RxString errorMessage = "".obs;
+  final RxString selectedMethod = "Call".obs;
+  final RxBool isActionInProgress = false.obs;
 
   final ClientController clientController = Get.find<ClientController>();
-  late TextEditingController uriController;
+  StreamSubscription? _subscription;
+  final int _maxLogs = 1000;
+  final int _maxRetries = 1; // Made configurable
 
-  @override
-  void onInit() {
-    super.onInit();
-    dev.log("ActionController: Initialized");
+  void trySetInitialClient() {
+    try {
+      final connectedClient = clientController.clients.firstWhereOrNull(
+        clientController.isConnected,
+      );
+      if (connectedClient != null) {
+        selectedClient.value = connectedClient;
+      }
+    } on Exception catch (e) {
+      log("Error setting initial client: $e");
+    }
   }
 
   @override
-  void onClose() {
-    uriController.dispose();
-    dev.log("ActionController: Closed, uriController disposed");
+  Future<void> onClose() async {
+    await cleanUpResources();
     super.onClose();
   }
 
+  Future<void> cleanUpResources() async {
+    uriController.dispose();
+    await _subscription?.cancel();
+    logs.clear();
+    log("ActionController resources cleaned up");
+  }
+
   Future<void> setSelectedClient(ClientModel client) async {
+    if (selectedClient.value == client) {
+      return;
+    }
+
     selectedClient.value = client;
-    if (!clientController.isConnected(client) && (clientController.clientSessions[client.name] ?? false)) {
+    if (!clientController.isConnected(client)) {
+      await _handleClientReconnection(client);
+    }
+  }
+
+  Future<void> _handleClientReconnection(ClientModel client) async {
+    try {
+      _addLog("Attempting to connect client '${client.name}'...");
       await clientController.connect(client);
+      _addLog("Client '${client.name}' connected successfully");
+    } catch (e) {
+      final errorMsg = "Failed to connect client '${client.name}': $e";
+      errorMessage.value = errorMsg;
+      _addLog("Error: $errorMsg");
+      rethrow;
     }
   }
 
   String _getCurrentTimestamp() {
-    final now = DateTime.now();
-    return now.toIso8601String();
+    return DateTime.now().toIso8601String();
   }
 
   void _addLog(String message) {
-    logsMessage.value += "${_getCurrentTimestamp()} - $message\n";
+    if (logs.length >= _maxLogs) {
+      logs.removeAt(0);
+    }
+    logs.add("${_getCurrentTimestamp()} - $message");
+  }
+
+  void clearLogs() {
+    logs.clear();
+    _addLog("Logs cleared");
   }
 
   Future<void> performAction(
@@ -52,102 +96,191 @@ class ActionController extends GetxController {
     List<String> args,
     Map<String, String> kwArgs,
   ) async {
-    if (selectedClient.value == null) {
-      _addLog("Please select a client first.");
+    if (isActionInProgress.value) {
       return;
     }
+    isActionInProgress.value = true;
 
     try {
-      Logs result;
-      var argsEmpty = true;
-      for (final arg in args) {
-        if (arg.trim().isNotEmpty) {
-          argsEmpty = false;
-          break;
-        }
-      }
-      if (argsEmpty) {
-        args.clear();
-      }
-
-      var kwargsEmpty = true;
-      kwArgs.forEach((String key, String value) {
-        if (key.trim().isNotEmpty || value.trim().isNotEmpty) {
-          kwargsEmpty = false;
-        }
-      });
-      if (kwargsEmpty) {
-        kwArgs.clear();
-      }
-
-      final session = clientController.isConnected(selectedClient.value!)
-          ? clientController.activeSessions[selectedClient.value!.name]!
-          : await clientController.connect(selectedClient.value!);
-
-      switch (actionType) {
-        case "Call":
-          result = await performCallAction(session, uri, args, kwArgs);
-        case "Register":
-          result = await performRegisterAction(session, uri, args);
-        case "Subscribe":
-          result = await performSubscribeAction(session, uri);
-        case "Publish":
-          result = await performPublishAction(session, uri, args, kwArgs);
-        default:
-          result = Logs(error: "Select Action");
-      }
-
-      if (result.error != null) {
-        _addLog("Error: ${result.error}");
-      } else {
-        _addLog("Success: ${result.data}");
-      }
+      await _performActionInternal(
+        actionType,
+        uri,
+        _sanitizeArgs(args),
+        _sanitizeKwArgs(kwArgs),
+      );
     } on Exception catch (e) {
-      _addLog("An exception occurred: $e");
+      errorMessage.value = "Unexpected error: $e";
+      _addLog("Critical Error: $e");
+    } finally {
+      isActionInProgress.value = false;
     }
   }
 
-  Future<Logs> performCallAction(
+  List<String> _sanitizeArgs(List<String> args) {
+    return args.where((arg) => arg.trim().isNotEmpty).toList();
+  }
+
+  Map<String, String> _sanitizeKwArgs(Map<String, String> kwArgs) {
+    return Map.from(kwArgs)..removeWhere((key, value) => key.trim().isEmpty && value.trim().isEmpty);
+  }
+
+  Future<void> _performActionInternal(
+    String actionType,
+    String uri,
+    List<String> args,
+    Map<String, String> kwArgs,
+  ) async {
+    errorMessage.value = "";
+    selectedMethod.value = actionType.toLowerCase().capitalizeFirst!;
+
+    if (selectedClient.value == null) {
+      _handleError("Please select a client first.");
+      return;
+    }
+
+    final client = selectedClient.value!;
+    Session session;
+    try {
+      session = await clientController.getOrCreateSession(client);
+    } on Exception catch (e) {
+      _handleError("Failed to establish session for client '${client.name}': $e");
+      return;
+    }
+
+    if (uri.isEmpty) {
+      _handleError("URI cannot be empty.");
+      return;
+    }
+
+    _addLog("Starting $actionType action on URI: $uri");
+    final result = await _executeWampAction(
+      actionType,
+      session,
+      uri,
+      args,
+      kwArgs,
+    );
+
+    if (result.error != null) {
+      _handleError(result.error!);
+    } else {
+      _addLog("Success: ${result.data}");
+    }
+  }
+
+  void _handleError(String message) {
+    errorMessage.value = message;
+    _addLog("Error: $message");
+  }
+
+  Future<Logs> _executeWampAction(
+    String actionType,
+    Session session,
+    String uri,
+    List<String> args,
+    Map<String, String> kwArgs,
+  ) async {
+    int retryCount = 0;
+
+    try {
+      return await Future.any([
+        Future(() async {
+          while (retryCount <= _maxRetries) {
+            try {
+              switch (actionType.toLowerCase()) {
+                case "call":
+                  return await _performCallAction(session, uri, args, kwArgs);
+                case "register":
+                  return await _performRegisterAction(session, uri, args);
+                case "subscribe":
+                  return await _performSubscribeAction(session, uri);
+                case "publish":
+                  return await _performPublishAction(session, uri, args, kwArgs);
+                default:
+                  return Logs(error: "Unknown action type: $actionType");
+              }
+            } on Exception catch (e) {
+              _addLog("Action $actionType failed with error: $e");
+              if (retryCount < _maxRetries) {
+                _addLog("Retrying $actionType action (attempt ${retryCount + 1} of ${_maxRetries + 1})...");
+                retryCount++;
+                await clientController.disconnect(selectedClient.value!);
+                await clientController.getOrCreateSession(selectedClient.value!);
+                _addLog("New session state after retry: ${clientController.isConnected(selectedClient.value!)}");
+                continue;
+              }
+              return Logs(error: "Failed to perform $actionType after retries: $e");
+            }
+          }
+          return Logs(error: "Failed to perform $actionType after retrying");
+        }),
+        Future.delayed(const Duration(seconds: 15), () {
+          throw TimeoutException("Action $actionType timed out after 15 seconds");
+        }),
+      ]);
+    } on Exception catch (e) {
+      _addLog("ExecuteWampAction failed: $e");
+      return Logs(error: "Failed to execute action: $e");
+    }
+  }
+
+  Future<Logs> _performCallAction(
     Session session,
     String uri,
     List<String> args,
     Map<String, String> kwArgs,
   ) async {
     try {
-      final result = await session.call(uri, args: args, kwargs: kwArgs);
-      return Logs(data: "args=${result.args}, kwargs=${result.kwargs}");
+      final result = await session.call(uri, args: args, kwargs: kwArgs).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw TimeoutException("Call to $uri timed out after 10 seconds");
+        },
+      );
+      return Logs(data: "Call result - args: ${result.args}, kwargs: ${result.kwargs}");
     } on Exception catch (e) {
-      return Logs(error: "Failed to perform call: $e");
+      _addLog("Call action failed: $e");
+      rethrow;
     }
   }
 
-  Future<Logs> performRegisterAction(Session session, String uri, List<String> args) async {
+  Future<Logs> _performRegisterAction(
+    Session session,
+    String uri,
+    List<String> args,
+  ) async {
     try {
       final result = await session.register(uri, (Invocation inv) {
-        final response = Result(args: inv.args, kwargs: inv.kwargs);
-        _addLog("Register invoked with args=${inv.args}, kwargs=${inv.kwargs}");
-        return response;
+        _addLog("Register invoked - args: ${inv.args}, kwargs: ${inv.kwargs}");
+        return Result(args: inv.args, kwargs: inv.kwargs);
       });
-      return Logs(data: "Register action performed successfully: $result");
+      return Logs(data: "Registered procedure: $result");
     } on Exception catch (e) {
-      return Logs(error: "Failed to perform register: $e");
+      _addLog("Register action failed: $e");
+      rethrow;
     }
   }
 
-  Future<Logs> performSubscribeAction(Session session, String uri) async {
+  Future<Logs> _performSubscribeAction(
+    Session session,
+    String uri,
+  ) async {
     try {
-      await session.subscribe(uri, (event) {
-        _addLog(
-          "Subscribed event received: args=${event.args}, kwargs=${event.kwargs}",
-        );
-      });
-      return Logs(data: "Subscribed successfully");
+      await _subscription?.cancel();
+      _subscription = session
+          .subscribe(uri, (event) {
+            _addLog("Event received - args: ${event.args}, kwargs: ${event.kwargs}");
+          })
+          .asStream()
+          .listen(null);
+      return Logs(data: "Subscribed to topic: $uri");
     } on Exception catch (e) {
-      return Logs(error: "Failed to subscribe: $e");
+      _addLog("Subscribe action failed: $e");
+      rethrow;
     }
   }
 
-  Future<Logs> performPublishAction(
+  Future<Logs> _performPublishAction(
     Session session,
     String uri,
     List<String> args,
@@ -155,9 +288,10 @@ class ActionController extends GetxController {
   ) async {
     try {
       await session.publish(uri, args: args, kwargs: kwArgs);
-      return Logs(data: "Publish action performed successfully");
+      return Logs(data: "Published to topic: $uri");
     } on Exception catch (e) {
-      return Logs(error: "Failed to publish: $e");
+      _addLog("Publish action failed: $e");
+      rethrow;
     }
   }
 }
@@ -167,4 +301,7 @@ class Logs {
 
   final String? data;
   final String? error;
+
+  @override
+  String toString() => "Logs(data: $data, error: $error)";
 }
