@@ -31,26 +31,34 @@ Future<Session> connect(
 
   if (ticket != null) {
     client = Client(
-      serializer: serializer,
-      authenticator: TicketAuthenticator(authid ?? "", {}, ticket),
+      config: ClientConfig(
+        serializer: serializer,
+        authenticator: TicketAuthenticator(authid ?? "", {}, ticket),
+      ),
     );
   } else if (secret != null) {
     client = Client(
-      serializer: serializer,
-      authenticator: WAMPCRAAuthenticator(authid ?? "", {}, secret),
+      config: ClientConfig(
+        serializer: serializer,
+        authenticator: WAMPCRAAuthenticator(authid ?? "", {}, secret),
+      ),
     );
   } else if (privateKey != null) {
     client = Client(
-      serializer: serializer,
-      authenticator: CryptoSignAuthenticator(authid ?? "", {}, privateKey),
+      config: ClientConfig(
+        serializer: serializer,
+        authenticator: CryptoSignAuthenticator(authid ?? "", {}, privateKey),
+      ),
     );
   } else if (authid != null) {
     client = Client(
-      serializer: serializer,
-      authenticator: AnonymousAuthenticator(authid),
+      config: ClientConfig(
+        serializer: serializer,
+        authenticator: AnonymousAuthenticator(authid),
+      ),
     );
   } else {
-    client = Client(serializer: serializer);
+    client = client = Client(config: ClientConfig(serializer: serializer));
   }
 
   return client.connect(url, realm);
