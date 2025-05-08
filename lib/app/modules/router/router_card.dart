@@ -11,6 +11,7 @@ class RouterCard extends StatelessWidget {
     required Key key,
     required this.realmName,
     required this.status,
+    required this.realm,
     required this.port,
     required this.serializers,
     required this.isActive,
@@ -22,6 +23,7 @@ class RouterCard extends StatelessWidget {
   final RouterController controller;
   final String realmName;
   final String status;
+  final String realm;
   final String port;
   final String serializers;
   final bool isActive;
@@ -56,6 +58,13 @@ class RouterCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            InfoRow(icon: Icons.settings_ethernet, label: "realm", value: port),
+            InfoRow(
+              icon: Icons.data_array,
+              label: "Realm",
+              value: realmName,
             ),
             const SizedBox(height: 12),
             InfoRow(icon: Icons.settings_ethernet, label: "Port", value: port),
@@ -110,6 +119,7 @@ class RouterCard extends StatelessWidget {
       ..add(DiagnosticsProperty<bool>("isActive", isActive))
       ..add(ObjectFlagProperty<VoidCallback>.has("onEdit", onEdit))
       ..add(ObjectFlagProperty<VoidCallback>.has("onToggle", onToggle))
-      ..add(ObjectFlagProperty<VoidCallback>.has("onDelete", onDelete));
+      ..add(ObjectFlagProperty<VoidCallback>.has("onDelete", onDelete))
+      ..add(StringProperty("realm", realm));
   }
 }
