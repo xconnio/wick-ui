@@ -7,40 +7,45 @@ class ResponsiveScaffold extends StatelessWidget {
     required this.body,
     super.key,
     this.title,
+    this.leading,
+    this.trailing,
     this.floatingActionButton,
   });
 
   final Widget body;
   final String? title;
+  final Widget? leading;
+  final Widget? trailing;
   final FloatingActionButton? floatingActionButton;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title ?? "Wick"),
-      ),
       body: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          if (constraints.maxWidth >= 800) {
-            // Desktop/Web layout
-            return Row(
+          final bool isDesktop = constraints.maxWidth >= 800;
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(title ?? "Wick"),
+              leading: leading,
+              actions: trailing != null ? [trailing!] : null,
+              automaticallyImplyLeading: !isDesktop, // Hide hamburger when sidebar is visible
+            ),
+            body: Row(
               children: [
-                const SizedBox(
-                  width: 250,
-                  child: MainDrawer(),
-                ),
+                if (isDesktop)
+                  const SizedBox(
+                    width: 250,
+                    child: MainDrawer(),
+                  ),
                 Expanded(child: body),
               ],
-            );
-          } else {
-            // Mobile/Tablet layout
-            return body;
-          }
+            ),
+            drawer: !isDesktop ? const MainDrawer(isSidebar: false) : null,
+            floatingActionButton: floatingActionButton,
+          );
         },
       ),
-      drawer: const MainDrawer(isSidebar: false),
-      floatingActionButton: floatingActionButton,
     );
   }
 
