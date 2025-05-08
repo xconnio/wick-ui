@@ -1,7 +1,7 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-
 import "package:wick_ui/config/theme/dark_theme_colors.dart";
+import "package:wick_ui/config/theme/my_fonts.dart";
 
 class WampMethodButton extends StatelessWidget {
   const WampMethodButton({
@@ -20,19 +20,20 @@ class WampMethodButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 150, // Reduced width for smaller size
-      height: 40, // Reduced height for smaller size
+      width: 150,
+      height: 40,
       child: ElevatedButton(
         style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.all(DarkThemeColors.primaryColor),
+          backgroundColor: WidgetStateProperty.all(DarkThemeColors.buttonBackground),
           padding: WidgetStateProperty.all(
-            const EdgeInsets.symmetric(vertical: 6, horizontal: 10), // Adjusted padding for smaller size
+            const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
           ),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
           ),
+          elevation: WidgetStateProperty.all(2),
         ),
         onPressed: onMethodCalled,
         child: Row(
@@ -40,30 +41,32 @@ class WampMethodButton extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                selectedMethod ?? "Call", // Default label
-                style: const TextStyle(
-                  color: DarkThemeColors.onPrimaryColor,
-                  fontSize: 12, // Reduced font size for smaller button
+                selectedMethod ?? "Call",
+                style: MyFonts.bodyMedium.copyWith(
+                  fontSize: 12,
+                  color: DarkThemeColors.buttonForeground,
                 ),
-                overflow: TextOverflow.ellipsis, // Avoid overflow issues
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             PopupMenuButton<String>(
               icon: const Icon(
                 Icons.arrow_drop_down,
-                color: DarkThemeColors.onPrimaryColor,
+                color: DarkThemeColors.buttonForeground,
               ),
               color: DarkThemeColors.cardColor,
-              tooltip: "Select a method", // Accessibility improvement
+              tooltip: "Select a method",
               onSelected: onMethodChanged,
               itemBuilder: (BuildContext context) {
                 if (methods.isEmpty) {
                   return [
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       enabled: false,
                       child: Text(
                         "No methods available",
-                        style: TextStyle(color: DarkThemeColors.bodyTextColor),
+                        style: MyFonts.bodyMedium.copyWith(
+                          color: DarkThemeColors.textPrimary.withAlpha((0.6 * 255).round()),
+                        ),
                       ),
                     ),
                   ];
@@ -73,7 +76,9 @@ class WampMethodButton extends StatelessWidget {
                     value: method,
                     child: Text(
                       method,
-                      style: const TextStyle(color: DarkThemeColors.bodyTextColor),
+                      style: MyFonts.bodyMedium.copyWith(
+                        color: DarkThemeColors.textPrimary,
+                      ),
                     ),
                   );
                 }).toList();
