@@ -7,22 +7,37 @@ import "package:wick_ui/app/modules/client/client_controller.dart";
 import "package:xconn/xconn.dart";
 
 class ActionController extends GetxController {
-  ActionController() {
-    uriController = TextEditingController();
-    trySetInitialClient();
-  }
-
-  late final TextEditingController uriController;
   final Rx<ClientModel?> selectedClient = Rx<ClientModel?>(null);
   final RxList<String> logs = <String>[].obs;
   final RxString errorMessage = "".obs;
   final RxString selectedMethod = "Call".obs;
   final RxBool isActionInProgress = false.obs;
 
+  late TextEditingController uriController;
   final ClientController clientController = Get.find<ClientController>();
   StreamSubscription? _subscription;
   final int _maxLogs = 1000;
-  final int _maxRetries = 1; // Made configurable
+  final int _maxRetries = 1;
+
+  @override
+  void onInit() {
+    super.onInit();
+    uriController = TextEditingController();
+    trySetInitialClient();
+  }
+
+  @override
+  Future<void> onClose() async {
+    await _cleanUpResources();
+    super.onClose();
+  }
+
+  Future<void> _cleanUpResources() async {
+    uriController.dispose();
+    await _subscription?.cancel();
+    logs.clear();
+    log("ActionController resources cleaned up");
+  }
 
   void trySetInitialClient() {
     try {
@@ -35,19 +50,6 @@ class ActionController extends GetxController {
     } on Exception catch (e) {
       log("Error setting initial client: $e");
     }
-  }
-
-  @override
-  Future<void> onClose() async {
-    await cleanUpResources();
-    super.onClose();
-  }
-
-  Future<void> cleanUpResources() async {
-    uriController.dispose();
-    await _subscription?.cancel();
-    logs.clear();
-    log("ActionController resources cleaned up");
   }
 
   Future<void> setSelectedClient(ClientModel client) async {
@@ -121,7 +123,7 @@ class ActionController extends GetxController {
   }
 
   Map<String, String> _sanitizeKwArgs(Map<String, String> kwArgs) {
-    return Map.from(kwArgs)..removeWhere((key, value) => key.trim().isEmpty && value.trim().isEmpty);
+    return Map.from(kwArgs)..removeWhere((k, v) => k.trim().isEmpty && v.trim().isEmpty);
   }
 
   Future<void> _performActionInternal(
@@ -200,13 +202,10 @@ class ActionController extends GetxController {
                   return Logs(error: "Unknown action type: $actionType");
               }
             } on Exception catch (e) {
-              _addLog("Action $actionType failed with error: $e");
               if (retryCount < _maxRetries) {
-                _addLog("Retrying $actionType action (attempt ${retryCount + 1} of ${_maxRetries + 1})...");
                 retryCount++;
                 await clientController.disconnect(selectedClient.value!);
                 await clientController.getOrCreateSession(selectedClient.value!);
-                _addLog("New session state after retry: ${clientController.isConnected(selectedClient.value!)}");
                 continue;
               }
               return Logs(error: "Failed to perform $actionType after retries: $e");
@@ -219,7 +218,6 @@ class ActionController extends GetxController {
         }),
       ]);
     } on Exception catch (e) {
-      _addLog("ExecuteWampAction failed: $e");
       return Logs(error: "Failed to execute action: $e");
     }
   }
@@ -231,15 +229,9 @@ class ActionController extends GetxController {
     Map<String, String> kwArgs,
   ) async {
     try {
-      final result = await session.call(uri, args: args, kwargs: kwArgs).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw TimeoutException("Call to $uri timed out after 10 seconds");
-        },
-      );
+      final result = await session.call(uri, args: args, kwargs: kwArgs);
       return Logs(data: "Call result - args: ${result.args}, kwargs: ${result.kwargs}");
-    } on Exception catch (e) {
-      _addLog("Call action failed: $e");
+    } on Exception {
       rethrow;
     }
   }
@@ -251,12 +243,10 @@ class ActionController extends GetxController {
   ) async {
     try {
       final result = await session.register(uri, (Invocation inv) {
-        _addLog("Register invoked - args: ${inv.args}, kwargs: ${inv.kwargs}");
         return Result(args: inv.args, kwargs: inv.kwargs);
       });
       return Logs(data: "Registered procedure: $result");
-    } on Exception catch (e) {
-      _addLog("Register action failed: $e");
+    } on Exception {
       rethrow;
     }
   }
@@ -274,8 +264,7 @@ class ActionController extends GetxController {
           .asStream()
           .listen(null);
       return Logs(data: "Subscribed to topic: $uri");
-    } on Exception catch (e) {
-      _addLog("Subscribe action failed: $e");
+    } on Exception {
       rethrow;
     }
   }
@@ -289,8 +278,7 @@ class ActionController extends GetxController {
     try {
       await session.publish(uri, args: args, kwargs: kwArgs);
       return Logs(data: "Published to topic: $uri");
-    } on Exception catch (e) {
-      _addLog("Publish action failed: $e");
+    } on Exception {
       rethrow;
     }
   }
@@ -301,7 +289,4 @@ class Logs {
 
   final String? data;
   final String? error;
-
-  @override
-  String toString() => "Logs(data: $data, error: $error)";
 }

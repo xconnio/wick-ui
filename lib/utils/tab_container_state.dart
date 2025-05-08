@@ -1,20 +1,56 @@
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
+import "package:get/get.dart";
+import "package:wick_ui/app/modules/action/action_controller.dart";
+import "package:wick_ui/app/modules/action/action_params_controller.dart";
 
 class TabContainerWidget extends StatefulWidget {
   const TabContainerWidget({required this.buildScreen, super.key});
-
   final Widget Function(BuildContext, int) buildScreen;
 
   @override
-  TabContainerState createState() => TabContainerState();
+  State<TabContainerWidget> createState() => _TabContainerWidgetState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties
-      ..add(ObjectFlagProperty<Widget Function(BuildContext p1, int p2)>.has("buildScreen", buildScreen))
-      ..add(ObjectFlagProperty<Widget Function(BuildContext p1, int p2)>.has("buildScreen", buildScreen));
+    properties.add(ObjectFlagProperty<Widget Function(BuildContext p1, int p2)>.has("buildScreen", buildScreen));
+  }
+}
+
+class _TabContainerWidgetState extends State<TabContainerWidget> {
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 5, // Your tab count
+      child: Builder(
+        builder: (context) {
+          final tabKey = DefaultTabController.of(context).index;
+
+          // Initialize controllers for this tab
+          final actionTag = "action_$tabKey";
+          final paramsTag = "params_$tabKey";
+
+          if (!Get.isRegistered<ActionController>(tag: actionTag)) {
+            Get.lazyPut<ActionController>(
+              ActionController.new,
+              tag: actionTag,
+              fenix: true,
+            );
+          }
+
+          if (!Get.isRegistered<ActionParamsController>(tag: paramsTag)) {
+            Get.lazyPut<ActionParamsController>(
+              ActionParamsController.new,
+              tag: paramsTag,
+              fenix: true,
+            );
+          }
+
+          return widget.buildScreen(context, tabKey);
+        },
+      ),
+    );
   }
 }
 

@@ -1,36 +1,11 @@
-import "package:flutter/material.dart";
 import "package:get/get.dart";
-
-class ActionParam {
-  ActionParam(this.type)
-      : argController = TextEditingController(),
-        keyController = TextEditingController(),
-        valueController = TextEditingController();
-  final String type; // "arg" or "kwarg"
-  final TextEditingController argController;
-  final TextEditingController keyController;
-  final TextEditingController valueController;
-
-  void dispose() {
-    argController.dispose();
-    keyController.dispose();
-    valueController.dispose();
-  }
-}
+import "package:wick_ui/app/data/models/action_param_model.dart";
 
 class ActionParamsController extends GetxController {
-  final RxList<ActionParam> params = <ActionParam>[].obs;
-
-  @override
-  void onClose() {
-    for (final param in params) {
-      param.dispose();
-    }
-    super.onClose();
-  }
+  final RxList<ParamModel> params = <ParamModel>[].obs;
 
   void addParam(String type) {
-    params.add(ActionParam(type));
+    params.add(ParamModel(type: type));
   }
 
   void removeParam(int index) {
@@ -39,13 +14,27 @@ class ActionParamsController extends GetxController {
   }
 
   List<String> getArgs() {
-    return params.where((param) => param.type == "arg").map((param) => param.argController.text).toList();
+    return params
+        .where((p) => p.type == "arg")
+        .map((p) => p.argController.text)
+        .where((text) => text.isNotEmpty)
+        .toList();
   }
 
   Map<String, String> getKwArgs() {
     return {
-      for (final param in params.where((param) => param.type == "kwarg"))
-        param.keyController.text: param.valueController.text,
+      for (final param in params.where((p) => p.type == "kwarg"))
+        if (param.keyController.text.isNotEmpty && param.valueController.text.isNotEmpty)
+          param.keyController.text: param.valueController.text,
     };
+  }
+
+  @override
+  void onClose() {
+    for (final param in params) {
+      param.dispose();
+    }
+    params.clear();
+    super.onClose();
   }
 }

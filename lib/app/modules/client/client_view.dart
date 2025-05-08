@@ -13,7 +13,6 @@ class ClientView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ResponsiveScaffold(
-      title: "Clients",
       body: Obx(() {
         if (controller.clients.isEmpty) {
           return const Center(child: Text("No clients created yet."));

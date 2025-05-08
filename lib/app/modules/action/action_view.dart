@@ -12,20 +12,15 @@ import "package:wick_ui/utils/tab_container_state.dart";
 class ActionView extends StatelessWidget {
   ActionView({super.key});
 
-  final List<String> wampMethods = [
-    "Call",
-    "Register",
-    "Subscribe",
-    "Publish",
-  ];
+  final List<String> wampMethods = ["Call", "Register", "Subscribe", "Publish"];
 
   @override
   Widget build(BuildContext context) {
     return Theme(
       data: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF121212), // Darker background
+        scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E1E1E), // Slightly lighter than scaffold
+          backgroundColor: Color(0xFF1E1E1E),
           foregroundColor: Colors.white,
           elevation: 2,
         ),
@@ -85,7 +80,6 @@ class ActionView extends StatelessWidget {
         ),
       ),
       child: ResponsiveScaffold(
-        title: "Actions",
         body: TabContainerWidget(
           buildScreen: _buildScreen,
         ),
@@ -94,59 +88,66 @@ class ActionView extends StatelessWidget {
   }
 
   Widget _buildScreen(BuildContext context, int tabKey) {
-    if (!Get.isRegistered<ActionParamsController>(tag: "params_$tabKey")) {
-      Get.put(ActionParamsController(), tag: "params_$tabKey");
-    }
-    if (!Get.isRegistered<ActionController>(tag: "action_$tabKey")) {
-      Get.put(ActionController(), tag: "action_$tabKey");
+    // Initialize controllers for this specific tab if they don't exist
+    final actionTag = "action_$tabKey";
+    final paramsTag = "params_$tabKey";
+
+    if (!Get.isRegistered<ActionController>(tag: actionTag)) {
+      Get.lazyPut<ActionController>(
+        ActionController.new,
+        tag: actionTag,
+        fenix: true,
+      );
     }
 
-    final ActionController actionController = Get.find<ActionController>(tag: "action_$tabKey");
-    final ClientController clientController = Get.find<ClientController>();
+    if (!Get.isRegistered<ActionParamsController>(tag: paramsTag)) {
+      Get.lazyPut<ActionParamsController>(
+        ActionParamsController.new,
+        tag: paramsTag,
+        fenix: true,
+      );
+    }
+
+    final actionController = Get.find<ActionController>(tag: actionTag);
+    final clientController = Get.find<ClientController>();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(
-            child: _buildUriBar(tabKey, actionController, clientController),
-          ),
+          SliverToBoxAdapter(child: _buildUriBar(tabKey, actionController, clientController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(
-            child: Obx(() {
-              if (actionController.errorMessage.value.isNotEmpty) {
-                return Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade900.withAlpha((0.3 * 255).round()),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.redAccent),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          actionController.errorMessage.value,
-                          style: const TextStyle(color: Colors.redAccent),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
-          ),
+          SliverToBoxAdapter(child: _buildErrorWidget(actionController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(child: _buildParamsSection(tabKey, actionController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(child: _buildLogsWindow(tabKey, actionController)),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
     );
+  }
+
+  Widget _buildErrorWidget(ActionController controller) {
+    return Obx(() {
+      if (controller.errorMessage.value.isEmpty) {
+        return const SizedBox.shrink();
+      }
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade900.withAlpha((0.3 * 255).round()),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.redAccent),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(controller.errorMessage.value)),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildUriBar(
