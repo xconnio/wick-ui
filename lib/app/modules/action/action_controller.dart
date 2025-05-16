@@ -17,7 +17,6 @@ class ActionController extends GetxController {
   final ClientController clientController = Get.find<ClientController>();
   StreamSubscription? _subscription;
   final int _maxLogs = 1000;
-  final int _maxRetries = 1;
 
   @override
   void onInit() {
@@ -36,7 +35,6 @@ class ActionController extends GetxController {
     uriController.dispose();
     await _subscription?.cancel();
     logs.clear();
-    log("ActionController resources cleaned up");
   }
 
   void trySetInitialClient() {
@@ -49,30 +47,6 @@ class ActionController extends GetxController {
       }
     } on Exception catch (e) {
       log("Error setting initial client: $e");
-    }
-  }
-
-  Future<void> setSelectedClient(ClientModel client) async {
-    if (selectedClient.value == client) {
-      return;
-    }
-
-    selectedClient.value = client;
-    if (!clientController.isConnected(client)) {
-      await _handleClientReconnection(client);
-    }
-  }
-
-  Future<void> _handleClientReconnection(ClientModel client) async {
-    try {
-      _addLog("Attempting to connect client '${client.name}'...");
-      await clientController.connect(client);
-      _addLog("Client '${client.name}' connected successfully");
-    } catch (e) {
-      final errorMsg = "Failed to connect client '${client.name}': $e";
-      errorMessage.value = errorMsg;
-      _addLog("Error: $errorMsg");
-      rethrow;
     }
   }
 
@@ -89,7 +63,6 @@ class ActionController extends GetxController {
 
   void clearLogs() {
     logs.clear();
-    _addLog("Logs cleared");
   }
 
   Future<void> performAction(
@@ -135,44 +108,34 @@ class ActionController extends GetxController {
     errorMessage.value = "";
     selectedMethod.value = actionType.toLowerCase().capitalizeFirst!;
 
-    if (selectedClient.value == null) {
-      _handleError("Please select a client first.");
-      return;
-    }
-
     final client = selectedClient.value!;
-    Session session;
+    Session? session;
     try {
       session = await clientController.getOrCreateSession(client);
     } on Exception catch (e) {
-      _handleError("Failed to establish session for client '${client.name}': $e");
-      return;
+      _addLog("Failed to establish session for client '${client.name}': $e");
+      clientController.currentSession = null;
+      await clientController.getOrCreateSession(client);
     }
 
     if (uri.isEmpty) {
-      _handleError("URI cannot be empty.");
+      _addLog("URI cannot be empty.");
       return;
     }
 
-    _addLog("Starting $actionType action on URI: $uri");
     final result = await _executeWampAction(
       actionType,
-      session,
+      session!,
       uri,
       args,
       kwArgs,
     );
 
     if (result.error != null) {
-      _handleError(result.error!);
+      _addLog(result.error!);
     } else {
       _addLog("Success: ${result.data}");
     }
-  }
-
-  void _handleError(String message) {
-    errorMessage.value = message;
-    _addLog("Error: $message");
   }
 
   Future<Logs> _executeWampAction(
@@ -182,43 +145,21 @@ class ActionController extends GetxController {
     List<String> args,
     Map<String, String> kwArgs,
   ) async {
-    int retryCount = 0;
-
     try {
-      return await Future.any([
-        Future(() async {
-          while (retryCount <= _maxRetries) {
-            try {
-              switch (actionType.toLowerCase()) {
-                case "call":
-                  return await _performCallAction(session, uri, args, kwArgs);
-                case "register":
-                  return await _performRegisterAction(session, uri, args);
-                case "subscribe":
-                  return await _performSubscribeAction(session, uri);
-                case "publish":
-                  return await _performPublishAction(session, uri, args, kwArgs);
-                default:
-                  return Logs(error: "Unknown action type: $actionType");
-              }
-            } on Exception catch (e) {
-              if (retryCount < _maxRetries) {
-                retryCount++;
-                await clientController.disconnect(selectedClient.value!);
-                await clientController.getOrCreateSession(selectedClient.value!);
-                continue;
-              }
-              return Logs(error: "Failed to perform $actionType after retries: $e");
-            }
-          }
-          return Logs(error: "Failed to perform $actionType after retrying");
-        }),
-        Future.delayed(const Duration(seconds: 15), () {
-          throw TimeoutException("Action $actionType timed out after 15 seconds");
-        }),
-      ]);
-    } on Exception catch (e) {
-      return Logs(error: "Failed to execute action: $e");
+      switch (actionType.toLowerCase()) {
+        case "call":
+          return await _performCallAction(session, uri, args, kwArgs);
+        case "register":
+          return await _performRegisterAction(session, uri, args);
+        case "subscribe":
+          return await _performSubscribeAction(session, uri);
+        case "publish":
+          return await _performPublishAction(session, uri, args, kwArgs);
+        default:
+          throw Exception("Unknown action type: $actionType");
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 

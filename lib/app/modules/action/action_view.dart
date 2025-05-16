@@ -57,7 +57,7 @@ class ActionView extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(child: _buildUriBar(tabKey, actionController, clientController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(child: _buildErrorWidget(actionController)),
+          // SliverToBoxAdapter(child: _buildErrorWidget(actionController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(child: _buildParamsSection(tabKey, actionController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
@@ -67,28 +67,28 @@ class ActionView extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorWidget(ActionController controller) {
-    return Obx(() {
-      if (controller.errorMessage.value.isEmpty) {
-        return const SizedBox.shrink();
-      }
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.red.shade900.withAlpha((0.3 * 255).round()),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.redAccent),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(controller.errorMessage.value)),
-          ],
-        ),
-      );
-    });
-  }
+  // Widget _buildErrorWidget(ActionController controller) {
+  //   return Obx(() {
+  //     if (controller.errorMessage.value.isEmpty) {
+  //       return const SizedBox.shrink();
+  //     }
+  //     return Container(
+  //       padding: const EdgeInsets.all(12),
+  //       decoration: BoxDecoration(
+  //         color: Colors.red.shade900.withAlpha((0.3 * 255).round()),
+  //         borderRadius: BorderRadius.circular(8),
+  //         border: Border.all(color: Colors.redAccent),
+  //       ),
+  //       child: Row(
+  //         children: [
+  //           const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+  //           const SizedBox(width: 8),
+  //           Expanded(child: Text(controller.errorMessage.value)),
+  //         ],
+  //       ),
+  //     );
+  //   });
+  // }
 
   Widget _buildUriBar(
     int tabKey,
@@ -182,9 +182,9 @@ class ActionView extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        onChanged: (ClientModel? newValue) async {
-          if (newValue != null) {
-            await actionController.setSelectedClient(newValue);
+        onChanged: (ClientModel? value) {
+          if (value != null) {
+            actionController.selectedClient.value = value;
           }
         },
         validator: (value) => value == null ? "Please select a client." : null,

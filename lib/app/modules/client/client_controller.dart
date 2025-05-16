@@ -108,7 +108,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
 
   Future<void> disconnectAllClients() async {
     log("ClientController: Disconnecting all clients");
-    await clearAllSessions();
+    // await clearAllSessions();
     log("ClientController: All clients disconnected and state cleared");
   }
 
