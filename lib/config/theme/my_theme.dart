@@ -50,7 +50,7 @@ mixin MyTheme {
           elevation: 2,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.grey.shade900,
         elevation: 1,
         shape: RoundedRectangleBorder(

@@ -24,7 +24,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.24.5
+          flutter-version: 3.32.0
 
       - name: Install dependencies
         run: make install
@@ -35,8 +35,8 @@ jobs:
       - name: Check lint
         run: make lint
 
-      - name: Build APK
-        run: make build-apk
+      - name: Build Web
+        run: make build-web
 
       - name: Run tests
         run: make tests
