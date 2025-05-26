@@ -122,11 +122,12 @@ mixin SessionManager on StateManager {
       currentSession = null;
       if (_currentClientName != null) {
         clientSessions[_currentClientName!] = false;
-      }      _currentClientName = null;
+      }
+      _currentClientName = null;
     }
 
     if (currentSession == null) {
-      log("SessionManager: No session or not connected for '${client.name}', creating new session");
+      log("SessionManager: '${client.name}' unavailable, creating new session");
       final session = await connect(client);
       _currentClientName = client.name;
       return session;
