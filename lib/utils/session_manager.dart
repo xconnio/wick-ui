@@ -6,6 +6,7 @@ import "package:xconn/xconn.dart";
 
 mixin SessionManager on StateManager {
   Session? currentSession;
+  String? _currentClientName;
 
   Future<Session> connect(ClientModel newClient) async {
     log("SessionManager: Attempting to connect for '${newClient.name}'");
@@ -18,7 +19,7 @@ mixin SessionManager on StateManager {
         config: ClientConfig(
           serializer: serializer,
           authenticator: TicketAuthenticator(newClient.authid, {}, newClient.secret),
-          keepAliveInterval: const Duration(seconds: 10), // Reduced interval
+          keepAliveInterval: const Duration(seconds: 10),
         ),
       );
     } else if (newClient.authmethod == "wamp-cra") {
@@ -116,9 +117,20 @@ mixin SessionManager on StateManager {
   }
 
   Future<Session?> getOrCreateSession(ClientModel client) async {
+    if (currentSession != null && _currentClientName != client.name) {
+      await disconnect(client);
+      currentSession = null;
+      if (_currentClientName != null) {
+        clientSessions[_currentClientName!] = false;
+      }
+      _currentClientName = null;
+    }
+
     if (currentSession == null) {
-      log("SessionManager: No session or not connected for '${client.name}', creating new session");
-      return connect(client);
+      log("SessionManager: '${client.name}' unavailable, creating new session");
+      final session = await connect(client);
+      _currentClientName = client.name;
+      return session;
     }
 
     if (clientSessions[client.name] ?? false) {
@@ -131,7 +143,6 @@ mixin SessionManager on StateManager {
       }
     }
 
-    log("SessionManager: Reusing valid session for '${client.name}', _currentSession: $currentSession");
-    return currentSession!;
+    return currentSession;
   }
 }
