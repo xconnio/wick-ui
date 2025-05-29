@@ -117,32 +117,20 @@ mixin SessionManager on StateManager {
   }
 
   Future<Session?> getOrCreateSession(ClientModel client) async {
-    if (currentSession != null && _currentClientName != client.name) {
+    if (_currentClientName != null && _currentClientName != client.name && currentSession != null) {
       await disconnect(client);
       currentSession = null;
-      if (_currentClientName != null) {
-        clientSessions[_currentClientName!] = false;
-      }
+      clientSessions[_currentClientName!] = false;
       _currentClientName = null;
     }
 
-    if (currentSession == null) {
-      log("SessionManager: '${client.name}' unavailable, creating new session");
-      final session = await connect(client);
-      _currentClientName = client.name;
-      return session;
+    if (currentSession != null && _currentClientName == client.name && (clientSessions[client.name] ?? false)) {
+      return currentSession;
     }
 
-    if (clientSessions[client.name] ?? false) {
-      try {
-        await connect(client);
-        log("SessionManager: Restored session for '${client.name}'");
-      } on Exception catch (e) {
-        clientSessions[client.name] = false;
-        log("SessionManager: Failed to restore session for '${client.name}': $e");
-      }
-    }
-
-    return currentSession;
+    log("SessionManager: '${client.name}' unavailable or not connected, creating new session");
+    final session = await connect(client);
+    _currentClientName = client.name;
+    return session;
   }
 }

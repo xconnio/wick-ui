@@ -13,7 +13,12 @@ import "package:wick_ui/utils/tab_container_state.dart";
 class ActionView extends StatelessWidget {
   ActionView({super.key});
 
-  final List<String> wampMethods = ["Call", "Register", "Subscribe", "Publish"];
+  final List<String> wampMethods = [
+    "Call",
+    "Register",
+    "Subscribe",
+    "Publish",
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -212,12 +217,26 @@ class ActionView extends StatelessWidget {
     });
   }
 
-  Widget _buildWampMethodButton(int tabKey, GlobalKey<FormState> formKey, ActionController actionController) {
+  Widget _buildWampMethodButton(
+    int tabKey,
+    GlobalKey<FormState> formKey,
+    ActionController actionController,
+  ) {
     final ActionParamsController paramsController = Get.find<ActionParamsController>(tag: "params_$tabKey");
 
     return Obx(() {
+      final uri = actionController.uriController.text.trim();
+      final selected = actionController.selectedMethod.value.toLowerCase();
+
+      String displayMethod = selected.capitalizeFirst!;
+      if (selected == "register" || selected == "unregister") {
+        displayMethod = actionController.registrations.containsKey(uri) ? "Unregister" : "Register";
+      } else if (selected == "subscribe" || selected == "unsubscribe") {
+        displayMethod = actionController.subscriptions.containsKey(uri) ? "Unsubscribe" : "Subscribe";
+      }
+
       return SizedBox(
-        height: 56, // Match the height of other form fields
+        height: 56,
         child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -246,14 +265,26 @@ class ActionView extends StatelessWidget {
                       bottomLeft: Radius.circular(8),
                     ),
                     onTap: actionController.isActionInProgress.value
-                        ? null // Disable tap when action is in progress
+                        ? null
                         : () async {
                             if (formKey.currentState?.validate() ?? false) {
                               List<String> args = paramsController.getArgs();
                               Map<String, String> kwArgs = paramsController.getKwArgs();
 
+                              String actualMethod = selected;
+                              if (selected == "register" && actionController.registrations.containsKey(uri)) {
+                                actualMethod = "unregister";
+                              } else if (selected == "unregister" && !actionController.registrations.containsKey(uri)) {
+                                actualMethod = "register";
+                              } else if (selected == "subscribe" && actionController.subscriptions.containsKey(uri)) {
+                                actualMethod = "unsubscribe";
+                              } else if (selected == "unsubscribe" &&
+                                  !actionController.subscriptions.containsKey(uri)) {
+                                actualMethod = "subscribe";
+                              }
+
                               await actionController.performAction(
-                                actionController.selectedMethod.value.toLowerCase(),
+                                actualMethod,
                                 actionController.uriController.text,
                                 args,
                                 kwArgs,
@@ -264,13 +295,11 @@ class ActionView extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Center(
                         child: Text(
-                          actionController.selectedMethod.value,
+                          displayMethod,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: actionController.isActionInProgress.value
-                                ? Colors.grey.shade400 // Dimmed color when disabled
-                                : Colors.white,
+                            color: actionController.isActionInProgress.value ? Colors.grey.shade400 : Colors.white,
                           ),
                         ),
                       ),
@@ -284,25 +313,13 @@ class ActionView extends StatelessWidget {
                 color: Colors.white.withAlpha((0.3 * 255).round()),
               ),
               PopupMenuButton<String>(
-                onSelected: actionController.isActionInProgress.value
-                    ? null // Disable menu when action is in progress
-                    : (String newValue) async {
-                        if (formKey.currentState?.validate() ?? false) {
-                          List<String> args = paramsController.getArgs();
-                          Map<String, String> kwArgs = paramsController.getKwArgs();
-
-                          await actionController.performAction(
-                            newValue.toLowerCase(),
-                            actionController.uriController.text,
-                            args,
-                            kwArgs,
-                          );
-                        }
-                      },
+                onSelected: (String newValue) {
+                  actionController.selectedMethod.value = newValue.toLowerCase();
+                },
                 itemBuilder: (context) {
                   return wampMethods.map((method) {
                     return PopupMenuItem<String>(
-                      value: method,
+                      value: method.toLowerCase(),
                       child: Text(method, style: const TextStyle(color: Colors.white)),
                     );
                   }).toList();
