@@ -13,6 +13,9 @@ class ActionController extends GetxController {
   final RxString selectedMethod = "Call".obs;
   final RxBool isActionInProgress = false.obs;
 
+  final Map<String, Registration> registrations = {};
+  final Map<String, Subscription> subscriptions = {};
+
   late TextEditingController uriController;
   final ClientController clientController = Get.find<ClientController>();
   StreamSubscription? _subscription;
@@ -155,6 +158,11 @@ class ActionController extends GetxController {
           return await _performSubscribeAction(session, uri);
         case "publish":
           return await _performPublishAction(session, uri, args, kwArgs);
+        case "unregister":
+          return await _performUnregisterAction(session, uri);
+        case "unsubscribe":
+          return await _performUnsubscribeAction(session, uri);
+
         default:
           throw Exception("Unknown action type: $actionType");
       }
@@ -183,12 +191,29 @@ class ActionController extends GetxController {
     List<String> args,
   ) async {
     try {
-      final result = await session.register(uri, (Invocation inv) {
+      final registration = await session.register(uri, (Invocation inv) {
         return Result(args: inv.args, kwargs: inv.kwargs);
       });
-      return Logs(data: "Registered procedure: $result");
+      registrations[uri] = registration;
+      selectedMethod.value = "unregister";
+      return Logs(data: "Registered procedure: $uri");
     } on Exception {
       rethrow;
+    }
+  }
+
+  Future<Logs> _performUnregisterAction(Session session, String uri) async {
+    final registration = registrations[uri];
+    if (registration == null) {
+      return Logs(error: "No registration found for URI: $uri");
+    }
+    try {
+      await session.unregister(registration);
+      registrations.remove(uri);
+      selectedMethod.value = "register";
+      return Logs(data: "Unregistered procedure: $uri");
+    } on Exception catch (e) {
+      return Logs(error: "Failed to unregister: $e");
     }
   }
 
@@ -198,15 +223,29 @@ class ActionController extends GetxController {
   ) async {
     try {
       await _subscription?.cancel();
-      _subscription = session
-          .subscribe(uri, (event) {
-            _addLog("Event received - args: ${event.args}, kwargs: ${event.kwargs}");
-          })
-          .asStream()
-          .listen(null);
+      final subscription = await session.subscribe(uri, (event) {
+        _addLog("Event received - args: ${event.args}, kwargs: ${event.kwargs}");
+      });
+      subscriptions[uri] = subscription;
+      selectedMethod.value = "unsubscribe";
       return Logs(data: "Subscribed to topic: $uri");
     } on Exception {
       rethrow;
+    }
+  }
+
+  Future<Logs> _performUnsubscribeAction(Session session, String uri) async {
+    final subscription = subscriptions[uri];
+    if (subscription == null) {
+      return Logs(error: "No subscription found for URI: $uri");
+    }
+    try {
+      await session.unsubscribe(subscription);
+      subscriptions.remove(uri);
+      selectedMethod.value = "subscribe";
+      return Logs(data: "Unsubscribed from topic: $uri");
+    } on Exception catch (e) {
+      return Logs(error: "Failed to unsubscribe: $e");
     }
   }
 
