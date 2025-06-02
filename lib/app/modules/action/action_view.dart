@@ -173,8 +173,10 @@ class ActionView extends StatelessWidget {
   }
 
   Widget _buildDropdown(int tabKey, ActionController actionController, ClientController clientController) {
+    const createClientValue = "__create_client__";
+
     return Obx(() {
-      return DropdownButtonFormField<ClientModel>(
+      return DropdownButtonFormField<dynamic>(
         isExpanded: true,
         hint: const Text("Select a client", style: TextStyle(color: Colors.grey)),
         value: actionController.selectedClient.value,
@@ -187,32 +189,65 @@ class ActionView extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        onChanged: (ClientModel? value) {
-          if (value != null) {
+        onChanged: (value) async {
+          if (value == null) {
+            return;
+          }
+
+          if (value == createClientValue) {
+            final previousValue = actionController.selectedClient.value;
+
+            final int oldCount = clientController.clients.length;
+
+            actionController.selectedClient.value = null;
+
+            await clientController.createClient();
+
+            final int newCount = clientController.clients.length;
+
+            if (newCount > oldCount) {
+              final newClient = clientController.clients.last;
+              actionController.selectedClient.value = newClient;
+            } else {
+              actionController.selectedClient.value = previousValue;
+            }
+            return;
+          }
+          if (value is ClientModel) {
             actionController.selectedClient.value = value;
           }
         },
-        validator: (value) => value == null ? "Please select a client." : null,
-        items: clientController.clients.map((ClientModel client) {
-          return DropdownMenuItem<ClientModel>(
-            value: client,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    client.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white),
+        validator: (value) => value == null || value == createClientValue ? "Please select a client." : null,
+        items: [
+          ...clientController.clients.map((ClientModel client) {
+            return DropdownMenuItem<ClientModel>(
+              value: client,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      client.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
-                ),
-                StatusIndicator(
-                  isActive: clientController.clientSessions[client.name] ?? false,
-                ),
+                  StatusIndicator(
+                    isActive: clientController.clientSessions[client.name] ?? false,
+                  ),
+                ],
+              ),
+            );
+          }),
+          const DropdownMenuItem(
+            value: createClientValue,
+            child: Row(
+              children: [
+                Text("Create new client"),
               ],
             ),
-          );
-        }).toList(),
+          ),
+        ],
       );
     });
   }
