@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:convert";
 import "dart:developer";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
@@ -174,12 +175,14 @@ class ActionController extends GetxController {
   Future<Logs> _performCallAction(
     Session session,
     String uri,
-    List<String> args,
-    Map<String, String> kwArgs,
+    List<Object?> args,
+    Map<String, Object?> kwArgs,
   ) async {
     try {
       final result = await session.call(uri, args: args, kwargs: kwArgs);
-      return Logs(data: "Call result - args: ${result.args}, kwargs: ${result.kwargs}");
+      final formattedArgs = prettyJson(result.args);
+      final formattedKwargs = prettyJson(result.kwargs);
+      return Logs(data: "Call result:\nargs:\n$formattedArgs\nkwargs:\n$formattedKwargs");
     } on Exception {
       rethrow;
     }
@@ -224,7 +227,9 @@ class ActionController extends GetxController {
     try {
       await _subscription?.cancel();
       final subscription = await session.subscribe(uri, (event) {
-        _addLog("Event received - args: ${event.args}, kwargs: ${event.kwargs}");
+        final formattedArgs = prettyJson(event.args);
+        final formattedKwargs = prettyJson(event.kwargs);
+        _addLog("Event received:\nargs:\n$formattedArgs\nkwargs:\n$formattedKwargs");
       });
       subscriptions[uri] = subscription;
       selectedMethod.value = "unsubscribe";
@@ -261,6 +266,10 @@ class ActionController extends GetxController {
     } on Exception {
       rethrow;
     }
+  }
+
+  String prettyJson(Object? json) {
+    return const JsonEncoder.withIndent("  ").convert(json);
   }
 }
 
