@@ -13,16 +13,19 @@ mixin AppPages {
       name: AppRoutes.action,
       page: ActionView.new,
       binding: ActionBinding(),
+      transition: Transition.noTransition,
     ),
     GetPage(
       name: AppRoutes.client,
       page: ClientView.new,
       binding: ClientBinding(),
+      transition: Transition.noTransition,
     ),
     GetPage(
       name: AppRoutes.router,
       page: RouterView.new,
       binding: RouterBinding(),
+      transition: Transition.noTransition,
     ),
   ];
 }
