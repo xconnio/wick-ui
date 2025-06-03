@@ -270,8 +270,11 @@ class ActionView extends StatelessWidget {
         displayMethod = actionController.subscriptions.containsKey(uri) ? "Unsubscribe" : "Subscribe";
       }
 
-      return SizedBox(
-        height: 56,
+      return ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: 48,
+          maxHeight: 48,
+        ),
         child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -284,8 +287,8 @@ class ActionView extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: Colors.blueAccent.withAlpha((0.3 * 255).round()),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
               ),
             ],
           ),
@@ -327,7 +330,7 @@ class ActionView extends StatelessWidget {
                             }
                           },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Center(
                         child: Text(
                           displayMethod,
