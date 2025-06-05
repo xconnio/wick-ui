@@ -6,50 +6,16 @@ import "package:wick_ui/app/modules/action/action_params_controller.dart";
 
 class TabContainerWidget extends StatefulWidget {
   const TabContainerWidget({required this.buildScreen, super.key});
-  final Widget Function(BuildContext, int) buildScreen;
+  final Widget Function(BuildContext context, int key) buildScreen;
 
   @override
-  State<TabContainerWidget> createState() => _TabContainerWidgetState();
+  State<TabContainerWidget> createState() => TabContainerState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(ObjectFlagProperty<Widget Function(BuildContext p1, int p2)>.has("buildScreen", buildScreen));
-  }
-}
-
-class _TabContainerWidgetState extends State<TabContainerWidget> {
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 5, // Your tab count
-      child: Builder(
-        builder: (context) {
-          final tabKey = DefaultTabController.of(context).index;
-
-          // Initialize controllers for this tab
-          final actionTag = "action_$tabKey";
-          final paramsTag = "params_$tabKey";
-
-          if (!Get.isRegistered<ActionController>(tag: actionTag)) {
-            Get.lazyPut<ActionController>(
-              ActionController.new,
-              tag: actionTag,
-              fenix: true,
-            );
-          }
-
-          if (!Get.isRegistered<ActionParamsController>(tag: paramsTag)) {
-            Get.lazyPut<ActionParamsController>(
-              ActionParamsController.new,
-              tag: paramsTag,
-              fenix: true,
-            );
-          }
-
-          return widget.buildScreen(context, tabKey);
-        },
-      ),
+    properties.add(
+      ObjectFlagProperty<Widget Function(BuildContext, int)>.has("buildScreen", buildScreen),
     );
   }
 }
@@ -58,7 +24,6 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
   static const double _padding = 24;
 
   TabController? _controller;
-  final Map<int, Widget> _tabs = {};
   final List<int> _tabKeys = [];
   int _tabCounter = 0;
 
@@ -66,29 +31,25 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
   void initState() {
     super.initState();
     _addTab();
-    _initializeController(0);
   }
 
   void _initializeController(int selectedIndex) {
-    if (_tabKeys.isNotEmpty) {
-      _controller = TabController(
-        vsync: this,
-        length: _tabKeys.length,
-        initialIndex: selectedIndex.clamp(0, _tabKeys.length - 1),
-      );
-    } else {
-      _controller = null;
-    }
+    _controller?.dispose();
+    _controller = TabController(
+      vsync: this,
+      length: _tabKeys.length,
+      initialIndex: selectedIndex.clamp(0, _tabKeys.length - 1),
+    )..addListener(() {
+        setState(() {});
+      });
+
+    setState(() {});
   }
 
   void _addTab() {
     setState(() {
       int newKey = _tabCounter++;
-      String title = "Tab ${newKey + 1}";
-
-      _tabs[newKey] = _buildTab(title, newKey);
       _tabKeys.add(newKey);
-
       _initializeController(_tabKeys.length - 1);
     });
   }
@@ -96,95 +57,112 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
   void _removeTab(int key) {
     if (_tabKeys.length > 1) {
       final int currentIndex = _controller?.index ?? 0;
-
       setState(() {
-        _tabs.remove(key);
         _tabKeys.remove(key);
-
         final int newIndex = (currentIndex >= _tabKeys.length) ? _tabKeys.length - 1 : currentIndex;
-
         _initializeController(newIndex);
       });
     }
   }
 
-  Widget _buildTab(String title, int key) {
+  Tab _buildTab(String title, int key) {
+    final bool showClose = _tabKeys.length > 1;
+
     return Tab(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white)),
-          if (_tabKeys.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: () => _removeTab(key),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
             ),
+          ),
+          if (showClose) ...[
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: () => _removeTab(key),
+              child: const Icon(
+                Icons.close,
+                size: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget _addTabButton() {
-    return Tooltip(
-      message: "Add a new tab",
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
       child: IconButton(
-        icon: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(Icons.add, size: 20, color: Colors.white),
         onPressed: _addTab,
+        tooltip: "Add a new tab",
       ),
     );
+  }
+
+  Widget _buildTabView(BuildContext context, int key) {
+    final actionTag = "action_$key";
+    final paramsTag = "params_$key";
+
+    if (!Get.isRegistered<ActionController>(tag: actionTag)) {
+      Get.lazyPut<ActionController>(ActionController.new, tag: actionTag, fenix: true);
+    }
+
+    if (!Get.isRegistered<ActionParamsController>(tag: paramsTag)) {
+      Get.lazyPut<ActionParamsController>(ActionParamsController.new, tag: paramsTag, fenix: true);
+    }
+
+    return widget.buildScreen(context, key);
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(_padding),
-      child: SizedBox.expand(
-        child: Column(
-          children: [
-            if (_tabKeys.isEmpty)
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("No tabs available!", style: TextStyle(color: Colors.white)),
-                    _addTabButton(),
-                  ],
-                ),
-              )
-            else
-              Expanded(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TabBar(
-                            controller: _controller,
-                            isScrollable: true,
-                            tabs: _tabKeys.map((key) => _tabs[key]!).toList(),
-                          ),
-                        ),
-                        _addTabButton(),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _controller,
-                        children: _tabKeys.map((key) {
-                          return Builder(
-                            builder: (BuildContext context) {
-                              return widget.buildScreen(context, key);
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-                ),
+      child: _tabKeys.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("No tabs available!", style: TextStyle(color: Colors.white)),
+                  _addTabButton(),
+                ],
               ),
-          ],
-        ),
-      ),
+            )
+          : Column(
+              children: [
+                SizedBox(
+                  height: kToolbarHeight,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TabBar(
+                          controller: _controller,
+                          isScrollable: true,
+                          indicatorColor: Colors.blueAccent,
+                          tabs: _tabKeys.map((key) => _buildTab("Tab ${key + 1}", key)).toList(),
+                        ),
+                      ),
+                      _addTabButton(),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: IndexedStack(
+                    index: _controller?.index ?? 0,
+                    children: _tabKeys.map((key) => _buildTabView(context, key)).toList(),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -197,8 +175,6 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty<TabController?>("_controller", _controller))
-      ..add(DiagnosticsProperty<TabController?>("_controller", _controller));
+    properties.add(DiagnosticsProperty<TabController?>("_controller", _controller));
   }
 }
