@@ -39,6 +39,29 @@ class ActionController extends GetxController {
     uriController.dispose();
     await _subscription?.cancel();
     logs.clear();
+
+    final client = selectedClient.value;
+    if (client == null) {
+      return;
+    }
+
+    try {
+      final session = await clientController.getOrCreateSession(client);
+
+      for (final reg in registrations.values) {
+        await session?.unregister(reg);
+      }
+      registrations.clear();
+
+      for (final sub in subscriptions.values) {
+        await session?.unsubscribe(sub);
+      }
+      subscriptions.clear();
+
+      _addLog("Cleaned up all registrations and subscriptions.");
+    } on Exception catch (e) {
+      _addLog("Cleanup error: $e");
+    }
   }
 
   void trySetInitialClient() {
