@@ -54,9 +54,15 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
     });
   }
 
-  void _removeTab(int key) {
+  Future<void> _removeTab(int key) async {
     if (_tabKeys.length > 1) {
       final int currentIndex = _controller?.index ?? 0;
+
+      final actionTag = "action_$key";
+      if (Get.isRegistered<ActionController>(tag: actionTag)) {
+        await Get.delete<ActionController>(tag: actionTag);
+      }
+
       setState(() {
         _tabKeys.remove(key);
         final int newIndex = (currentIndex >= _tabKeys.length) ? _tabKeys.length - 1 : currentIndex;
