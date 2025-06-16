@@ -1,8 +1,10 @@
+import "package:flutter/cupertino.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/action_param_model.dart";
 
 class ActionParamsController extends GetxController {
   final RxList<ParamModel> params = <ParamModel>[].obs;
+  final paramsFormKey = GlobalKey<FormState>();
 
   void addParam(String type) {
     params.add(ParamModel(type: type));

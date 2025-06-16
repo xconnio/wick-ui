@@ -15,4 +15,25 @@ class ParamModel {
     keyController.dispose();
     valueController.dispose();
   }
+
+  String? validateArg(String? value) {
+    if (value == null || value.isEmpty) {
+      return "arg cannot be empty";
+    }
+    return null;
+  }
+
+  String? validateKey(String? value) {
+    if (value == null || value.isEmpty) {
+      return "key cannot be empty";
+    }
+    return null;
+  }
+
+  String? validateValue(String? value) {
+    if (value == null || value.isEmpty) {
+      return "value cannot be empty";
+    }
+    return null;
+  }
 }

@@ -33,7 +33,6 @@ class ActionView extends StatelessWidget {
   }
 
   Widget _buildScreen(BuildContext context, int tabKey) {
-    // Initialize controllers for this specific tab if they don't exist
     final actionTag = "action_$tabKey";
     final paramsTag = "params_$tabKey";
 
@@ -62,7 +61,6 @@ class ActionView extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(child: _buildUriBar(tabKey, actionController, clientController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          // SliverToBoxAdapter(child: _buildErrorWidget(actionController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(child: _buildParamsSection(tabKey, actionController)),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
@@ -132,7 +130,7 @@ class ActionView extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           flex: 2,
-                          child: _buildWampMethodButton(tabKey, formKey, actionController),
+                          child: _buildWampMethodButton(tabKey, actionController),
                         ),
                       ],
                     ),
@@ -161,7 +159,7 @@ class ActionView extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           flex: 2,
-                          child: _buildWampMethodButton(tabKey, formKey, actionController),
+                          child: _buildWampMethodButton(tabKey, actionController),
                         ),
                       ],
                     ),
@@ -254,7 +252,6 @@ class ActionView extends StatelessWidget {
 
   Widget _buildWampMethodButton(
     int tabKey,
-    GlobalKey<FormState> formKey,
     ActionController actionController,
   ) {
     final ActionParamsController paramsController = Get.find<ActionParamsController>(tag: "params_$tabKey");
@@ -305,7 +302,7 @@ class ActionView extends StatelessWidget {
                     onTap: actionController.isActionInProgress.value
                         ? null
                         : () async {
-                            if (formKey.currentState?.validate() ?? false) {
+                            if (paramsController.paramsFormKey.currentState?.validate() ?? false) {
                               List<String> args = paramsController.getArgs();
                               Map<String, String> kwArgs = paramsController.getKwArgs();
 
@@ -387,179 +384,187 @@ class ActionView extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Arguments",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (String type) {
-                    paramsController.addParam(type.toLowerCase());
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem<String>(
-                      value: "arg",
-                      child: Row(
-                        children: [
-                          Icon(Icons.add, size: 18),
-                          SizedBox(width: 8),
-                          Text("Add Argument"),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: "kwarg",
-                      child: Row(
-                        children: [
-                          Icon(Icons.add, size: 18),
-                          SizedBox(width: 8),
-                          Text("Add Keyword Argument"),
-                        ],
-                      ),
-                    ),
-                  ],
-                  color: Colors.grey.shade900,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+        child: Form(
+          key: paramsController.paramsFormKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Arguments",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent.withAlpha((0.2 * 255).round()),
+                  PopupMenuButton<String>(
+                    onSelected: (String type) {
+                      paramsController.addParam(type.toLowerCase());
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem<String>(
+                        value: "arg",
+                        child: Row(
+                          children: [
+                            Icon(Icons.add, size: 18),
+                            SizedBox(width: 8),
+                            Text("Add Argument"),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: "kwarg",
+                        child: Row(
+                          children: [
+                            Icon(Icons.add, size: 18),
+                            SizedBox(width: 8),
+                            Text("Add Keyword Argument"),
+                          ],
+                        ),
+                      ),
+                    ],
+                    color: Colors.grey.shade900,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.add, size: 18, color: Colors.blueAccent),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Obx(() {
-              if (paramsController.params.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          "No arguments added",
-                          style: TextStyle(color: Colors.grey.shade500),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Add arguments or keyword arguments to begin",
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                        ),
-                      ],
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withAlpha((0.2 * 255).round()),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.add, size: 18, color: Colors.blueAccent),
                     ),
                   ),
-                );
-              }
-              return Column(
-                children: List.generate(paramsController.params.length, (index) {
-                  final param = paramsController.params[index];
+                ],
+              ),
+              const SizedBox(height: 8),
+              Obx(() {
+                if (paramsController.params.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          margin: const EdgeInsets.only(right: 8, top: 8),
-                          decoration: BoxDecoration(
-                            color: param.type == "arg"
-                                ? Colors.blueAccent.withAlpha((0.2 * 255).round())
-                                : Colors.purpleAccent.withAlpha((0.2 * 255).round()),
-                            shape: BoxShape.circle,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            "No arguments added",
+                            style: TextStyle(color: Colors.grey.shade500),
                           ),
-                          child: Center(
-                            child: Text(
-                              param.type == "arg" ? "A" : "K",
-                              style: TextStyle(
-                                color: param.type == "arg" ? Colors.blueAccent : Colors.purpleAccent,
-                                fontWeight: FontWeight.bold,
+                          const SizedBox(height: 4),
+                          Text(
+                            "Add arguments or keyword arguments to begin",
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return Column(
+                  children: List.generate(paramsController.params.length, (index) {
+                    final param = paramsController.params[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            margin: const EdgeInsets.only(right: 8, top: 8),
+                            decoration: BoxDecoration(
+                              color: param.type == "arg"
+                                  ? Colors.blueAccent.withAlpha((0.2 * 255).round())
+                                  : Colors.purpleAccent.withAlpha((0.2 * 255).round()),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                param.type == "arg" ? "A" : "K",
+                                style: TextStyle(
+                                  color: param.type == "arg" ? Colors.blueAccent : Colors.purpleAccent,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: param.type == "arg"
-                              ? TextFormField(
-                                  controller: param.argController,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: InputDecoration(
-                                    labelText: "Argument ${index + 1}",
-                                    hintText: "Enter value",
-                                  ),
-                                )
-                              : isMobile
-                                  ? Column(
-                                      children: [
-                                        TextFormField(
-                                          controller: param.keyController,
-                                          style: const TextStyle(color: Colors.white),
-                                          decoration: const InputDecoration(
-                                            labelText: "Key",
-                                            hintText: "Enter key name",
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        TextFormField(
-                                          controller: param.valueController,
-                                          style: const TextStyle(color: Colors.white),
-                                          decoration: const InputDecoration(
-                                            labelText: "Value",
-                                            hintText: "Enter value",
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : Row(
-                                      children: [
-                                        Expanded(
-                                          child: TextFormField(
+                          Expanded(
+                            child: param.type == "arg"
+                                ? TextFormField(
+                                    controller: param.argController,
+                                    style: const TextStyle(color: Colors.white),
+                                    decoration: InputDecoration(
+                                      labelText: "Argument ${index + 1}",
+                                      hintText: "Enter value",
+                                    ),
+                                    validator: param.validateArg,
+                                  )
+                                : isMobile
+                                    ? Column(
+                                        children: [
+                                          TextFormField(
                                             controller: param.keyController,
                                             style: const TextStyle(color: Colors.white),
                                             decoration: const InputDecoration(
                                               labelText: "Key",
                                               hintText: "Enter key name",
                                             ),
+                                            validator: param.validateKey,
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: TextFormField(
+                                          const SizedBox(height: 8),
+                                          TextFormField(
                                             controller: param.valueController,
                                             style: const TextStyle(color: Colors.white),
                                             decoration: const InputDecoration(
                                               labelText: "Value",
                                               hintText: "Enter value",
                                             ),
+                                            validator: param.validateValue,
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.delete_outline,
-                            color: Colors.redAccent.withAlpha((0.8 * 255).round()),
+                                        ],
+                                      )
+                                    : Row(
+                                        children: [
+                                          Expanded(
+                                            child: TextFormField(
+                                              controller: param.keyController,
+                                              style: const TextStyle(color: Colors.white),
+                                              decoration: const InputDecoration(
+                                                labelText: "Key",
+                                                hintText: "Enter key name",
+                                              ),
+                                              validator: param.validateKey,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: TextFormField(
+                                              controller: param.valueController,
+                                              style: const TextStyle(color: Colors.white),
+                                              decoration: const InputDecoration(
+                                                labelText: "Value",
+                                                hintText: "Enter value",
+                                              ),
+                                              validator: param.validateValue,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                           ),
-                          onPressed: () => paramsController.removeParam(index),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              );
-            }),
-          ],
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: Colors.redAccent.withAlpha((0.8 * 255).round()),
+                            ),
+                            onPressed: () => paramsController.removeParam(index),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
