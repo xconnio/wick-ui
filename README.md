@@ -22,7 +22,7 @@ Built with Flutter, it supports **desktop**, **web**, and **mobile** platforms.
     - WAMP-CRA
     - Cryptosign
 - 🌐 Transport support:
-    - `ws`, `wss`, `rawsocket`
+    - `ws`, `wss`
 - ⚙️ Call RPCs, register procedures, subscribe to topics, and publish events
 - 🧾 Realtime structured logs (results, errors)
 - 🧰 Modular router/client config system
