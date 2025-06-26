@@ -56,14 +56,13 @@ class ActionView extends StatelessWidget {
     final clientController = Get.find<ClientController>();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.zero,
       child: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _buildUriBar(tabKey, actionController, clientController)),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          SliverToBoxAdapter(child: _buildUriBar(context, tabKey, actionController, clientController)),
+          const SliverToBoxAdapter(child: SizedBox(height: 6)),
           SliverToBoxAdapter(child: _buildParamsSection(tabKey, actionController)),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          const SliverToBoxAdapter(child: SizedBox(height: 6)),
           SliverToBoxAdapter(child: _buildLogsWindow(tabKey, actionController)),
         ],
       ),
@@ -94,13 +93,18 @@ class ActionView extends StatelessWidget {
   // }
 
   Widget _buildUriBar(
+    BuildContext context,
     int tabKey,
     ActionController actionController,
     ClientController clientController,
   ) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    final bool isMobile =
-        !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+
+    final double width = MediaQuery.of(context).size.width;
+    final bool isMobile = width < 600 &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS ||
+            kIsWeb); // Mobile native or mobile browser
 
     return Card(
       child: Padding(
@@ -114,8 +118,8 @@ class ActionView extends StatelessWidget {
                       controller: actionController.uriController,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
-                        labelText: "URI",
-                        hintText: "Enter WAMP URI",
+                        labelText: "Procedure",
+                        hintText: "Enter Procedure URI",
                         prefixIcon: Icon(Icons.link, size: 20),
                       ),
                       validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
@@ -149,8 +153,8 @@ class ActionView extends StatelessWidget {
                             controller: actionController.uriController,
                             style: const TextStyle(color: Colors.white),
                             decoration: const InputDecoration(
-                              labelText: "URI",
-                              hintText: "Enter WAMP URI",
+                              labelText: "Procedure",
+                              hintText: "Enter Procedure URI",
                               prefixIcon: Icon(Icons.link, size: 20),
                             ),
                             validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
@@ -441,7 +445,7 @@ class ActionView extends StatelessWidget {
               Obx(() {
                 if (paramsController.params.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Center(
                       child: Column(
                         children: [
@@ -630,7 +634,7 @@ class _LogsWindowWidgetState extends State<_LogsWindowWidget> {
             Row(
               children: [
                 const Text(
-                  "Execution Logs",
+                  "Logs",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
