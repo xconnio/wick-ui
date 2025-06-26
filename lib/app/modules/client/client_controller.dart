@@ -150,7 +150,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
                       children: [
                         _buildTextField(
                           controller: nameController,
-                          labelText: "client name",
+                          labelText: "Client name",
                           context: context,
                           validator: (value) {
                             if (value!.isEmpty) {
@@ -168,22 +168,19 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             children: [
                               Expanded(
                                 flex: 3,
-                                child: Padding(
-                                  padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-                                  child: _buildTextField(
-                                    controller: uriController,
-                                    labelText: "URI",
-                                    context: context,
-                                    validator: (value) {
-                                      if (value!.isEmpty) {
-                                        return "Please enter a URI";
-                                      }
-                                      if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
-                                        return "URI must start with ws:// or wss://";
-                                      }
-                                      return null;
-                                    },
-                                  ),
+                                child: _buildTextField(
+                                  controller: uriController,
+                                  labelText: "URI",
+                                  context: context,
+                                  validator: (value) {
+                                    if (value!.isEmpty) {
+                                      return "Please enter a URI";
+                                    }
+                                    if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
+                                      return "URI must start with ws:// or wss://";
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ),
                             ],
@@ -221,14 +218,14 @@ class ClientController extends GetxController with StateManager, SessionManager 
                           context: context,
                           fieldOne: _buildTextField(
                             controller: realmController,
-                            labelText: "realm",
+                            labelText: "Realm",
                             context: context,
                             validator: (value) => value!.isEmpty ? "Please enter a realm" : null,
                           ),
                           fieldTwo: DropdownButtonFormField<String>(
                             value: selectedSerializer,
                             decoration: InputDecoration(
-                              labelText: "serializer",
+                              labelText: "Serializer",
                               isDense: true,
                               contentPadding: _responsivePadding(context),
                               border: OutlineInputBorder(
@@ -257,11 +254,11 @@ class ClientController extends GetxController with StateManager, SessionManager 
                           context: context,
                           fieldOne: _buildTextField(
                             controller: authidController,
-                            labelText: "auth id",
+                            labelText: "Authid",
                             context: context,
                             validator: (value) {
                               if (selectedAuthMethod != "anonymous" && (value == null || value.isEmpty)) {
-                                return "please enter an auth id";
+                                return "please enter an authid";
                               }
                               return null;
                             },
@@ -269,7 +266,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
                           fieldTwo: DropdownButtonFormField<String>(
                             value: selectedAuthMethod,
                             decoration: InputDecoration(
-                              labelText: "auth method",
+                              labelText: "Auth method",
                               isDense: true,
                               contentPadding: _responsivePadding(context),
                               border: OutlineInputBorder(
