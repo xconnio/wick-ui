@@ -23,9 +23,9 @@ class InfoRow extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             label,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w500,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(width: 8),
@@ -33,7 +33,7 @@ class InfoRow extends StatelessWidget {
             child: Text(
               value,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade800,
+                    color: Colors.white70,
                   ),
             ),
           ),
