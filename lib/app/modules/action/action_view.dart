@@ -235,6 +235,7 @@ class ActionView extends StatelessWidget {
                     ),
                   ),
                   StatusIndicator(
+                    toolTipMsg: "",
                     isActive: clientController.clientSessions[client.name] ?? false,
                   ),
                 ],
