@@ -1,9 +1,9 @@
 name: wick-desktop
-base: core22
-version: '0.1.0'
-summary: WAMP API tester with a UI
+base: core24
+version: '0.2.0'
+summary: API tester for WAMP protocol
 description: |
-  WAMP API tester with a UI
+  API tester for WAMP Protocol
 
 grade: stable
 confinement: strict
