@@ -402,11 +402,6 @@ class ClientController extends GetxController with StateManager, SessionManager 
       keyboardType: keyboardType,
       validator: validator,
       maxLength: maxLength,
-      onChanged: (text) {
-        controller.value = controller.value.copyWith(
-          selection: TextSelection.collapsed(offset: text.length),
-        );
-      },
     );
   }
 
