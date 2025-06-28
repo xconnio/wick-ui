@@ -28,15 +28,12 @@ class ClientView extends StatelessWidget {
               itemCount: controller.clients.length,
               itemBuilder: (context, index) {
                 final client = controller.clients[index];
-                final isConnecting = controller.connectingClient.contains(client);
-
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: ClientCard(
                     controller: controller,
                     key: ValueKey(client.name),
                     client: client,
-                    isConnecting: isConnecting,
                     onEdit: () async => controller.createClient(client: client),
                     onDelete: () async => controller.deleteClient(client),
                     onToggle: () async => controller.toggleConnection(client),

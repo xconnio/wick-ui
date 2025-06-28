@@ -11,7 +11,6 @@ class ClientCard extends StatelessWidget {
     required this.controller,
     required Key key,
     required this.client,
-    required this.isConnecting,
     required this.onEdit,
     required this.onDelete,
     required this.onToggle,
@@ -19,7 +18,6 @@ class ClientCard extends StatelessWidget {
 
   final ClientController controller;
   final ClientModel client;
-  final bool isConnecting;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggle;
@@ -29,6 +27,7 @@ class ClientCard extends StatelessWidget {
     return Obx(() {
       final errorMessage = controller.errorMessages[client.name];
       final isConnected = controller.clientSessions[client.name] ?? false;
+      final isConnecting = controller.connectingClient.contains(client);
       return Card(
         elevation: 2,
         margin: const EdgeInsets.symmetric(vertical: 4),
@@ -50,17 +49,52 @@ class ClientCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (isConnecting)
-                    const Text(
-                      "Connecting...",
-                      style: TextStyle(
-                        color: Colors.orange,
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
+                  if (errorMessage != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Error: $errorMessage",
+                          style: TextStyle(
+                            color: Colors.red[400],
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 8),
+                        const StatusIndicator(
+                          isActive: false,
+                          color: Colors.red,
+                          toolTipMsg: "Disconnected",
+                        ),
+                      ],
+                    )
+                  else if (isConnecting)
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Connecting...",
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        StatusIndicator(
+                          isActive: false,
+                          color: Colors.orange,
+                          toolTipMsg: "Connecting",
+                        ),
+                      ],
                     )
                   else
-                    StatusIndicator(isActive: isConnected),
+                    StatusIndicator(
+                      isActive: isConnected,
+                      toolTipMsg: "Connected",
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -77,18 +111,6 @@ class ClientCard extends StatelessWidget {
                 value: client.authmethod,
               ),
               InfoRow(icon: Icons.data_array, label: "Serializer", value: client.serializer),
-              if (errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    "Error: $errorMessage",
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
               const Divider(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -125,7 +147,6 @@ class ClientCard extends StatelessWidget {
     properties
       ..add(DiagnosticsProperty<ClientController>("controller", controller))
       ..add(DiagnosticsProperty<ClientModel>("client", client))
-      ..add(DiagnosticsProperty<bool>("isConnecting", isConnecting))
       ..add(ObjectFlagProperty<VoidCallback>.has("onEdit", onEdit))
       ..add(ObjectFlagProperty<VoidCallback>.has("onDelete", onDelete))
       ..add(ObjectFlagProperty<VoidCallback>.has("onToggle", onToggle));

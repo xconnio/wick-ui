@@ -2,7 +2,6 @@ import "dart:developer";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/client_model.dart";
-import "package:wick_ui/app/modules/router/router_controller.dart";
 import "package:wick_ui/utils/session_manager.dart";
 import "package:wick_ui/utils/state_manager.dart";
 import "package:wick_ui/utils/storage_manager.dart";
@@ -60,56 +59,42 @@ class ClientController extends GetxController with StateManager, SessionManager 
 
   Future<void> toggleConnection(ClientModel client) async {
     errorMessages.remove(client.name);
+
     if (isConnected(client)) {
       await disconnect(client);
-      log("ClientController: Disconnected '${client.name}'");
-    } else {
-      bool isLocalRouter = client.uri.contains("localhost") || client.uri.contains("127.0.0.1");
+      return;
+    }
 
-      if (isLocalRouter) {
-        try {
-          final routerController = Get.find<RouterController>();
-          if (!(routerController.runningRouters[client.realm] ?? false)) {
-            log("ClientController: Local router for realm '${client.realm}' not running, skipping connection");
-            errorMessages[client.name] = "Router not running for realm '${client.realm}'";
-            return;
-          }
-        } on Exception catch (e) {
-          log("ClientController: RouterController unavailable for '${client.name}': $e");
-          errorMessages[client.name] = "Router unavailable. Please check router settings.";
-          return;
-        }
-      } else {
-        if (clientSessions[client.name] == null || !clientSessions[client.name]!) {
-          log("ClientController: Session for '${client.name}' is lost or missing, attempting to create new session");
-        }
-      }
+    connectingClient.add(client);
+    update();
 
-      log("ClientController: Attempting to connect '${client.name}' to ${client.uri}");
-      connectingClient.add(client);
-
-      try {
-        await connect(client);
-        log("ClientController: Connected '${client.name}'");
-        clientSessions[client.name] = true;
-        await saveClientState();
-      } on Exception catch (e) {
-        String errorMessage = e.toString();
-        errorMessages[client.name] = errorMessage;
-        clientSessions[client.name] = false;
-        await saveClientState();
-        log("ClientController: Failed to connect '${client.name}': $e");
-      } finally {
-        connectingClient.remove(client);
-        update();
-      }
+    try {
+      await connect(client);
+      clientSessions[client.name] = true;
+      await saveClientState();
+    } on Exception catch (e) {
+      final errorMsg = _processConnectionError(e);
+      errorMessages[client.name] = errorMsg;
+      clientSessions[client.name] = false;
+      await saveClientState();
+    } finally {
+      connectingClient.remove(client);
+      update();
     }
   }
 
-  Future<void> disconnectAllClients() async {
-    log("ClientController: Disconnecting all clients");
-    // await clearAllSessions();
-    log("ClientController: All clients disconnected and state cleared");
+  String _processConnectionError(error) {
+    final errorStr = error.toString();
+
+    if (errorStr.contains("Connection refused")) {
+      return "Connection refused";
+    } else if (errorStr.contains("WebSocketChannelException")) {
+      return "Failed host lookup: Name or service not known";
+    } else if (errorStr.contains("timed out")) {
+      return "Connection timeout";
+    }
+
+    return "Connection failed";
   }
 
   Future<void> createClient({ClientModel? client}) async {
@@ -156,7 +141,9 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             if (value!.isEmpty) {
                               return "please enter a name";
                             }
-                            if (clients.any((p) => p.name == value && p.name != client?.name)) {
+                            if (clients.any(
+                              (p) => p.name == value && p.name != client?.name,
+                            )) {
                               return "client name already exists. choose a different name.";
                             }
                             return null;
@@ -235,7 +222,10 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             items: serializers.map((serializer) {
                               return DropdownMenuItem<String>(
                                 value: serializer,
-                                child: Text(serializer, style: const TextStyle(fontSize: 14)),
+                                child: Text(
+                                  serializer,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
                               );
                             }).toList(),
                             onChanged: (value) {
@@ -276,7 +266,10 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             items: authMethods.map((authMethod) {
                               return DropdownMenuItem<String>(
                                 value: authMethod,
-                                child: Text(authMethod, style: const TextStyle(fontSize: 14)),
+                                child: Text(
+                                  authMethod,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
                               );
                             }).toList(),
                             onChanged: (value) {

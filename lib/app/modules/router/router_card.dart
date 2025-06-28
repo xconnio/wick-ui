@@ -54,6 +54,7 @@ class RouterCard extends StatelessWidget {
                 ),
                 Obx(
                   () => StatusIndicator(
+                    toolTipMsg: "",
                     isActive: controller.runningRouters[realmName] ?? false,
                   ),
                 ),
