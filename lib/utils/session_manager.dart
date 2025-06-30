@@ -14,7 +14,7 @@ mixin SessionManager on StateManager {
     var serializer = _getSerializer(newClient.serializer);
 
     Client client;
-    if (newClient.authmethod == "ticket") {
+    if (newClient.authmethod == "Ticket") {
       client = Client(
         config: ClientConfig(
           serializer: serializer,
@@ -22,7 +22,7 @@ mixin SessionManager on StateManager {
           keepAliveInterval: const Duration(seconds: 10),
         ),
       );
-    } else if (newClient.authmethod == "wamp-cra") {
+    } else if (newClient.authmethod == "WAMP-CRA") {
       client = Client(
         config: ClientConfig(
           serializer: serializer,
@@ -30,7 +30,7 @@ mixin SessionManager on StateManager {
           keepAliveInterval: const Duration(seconds: 10),
         ),
       );
-    } else if (newClient.authmethod == "cryptoSign") {
+    } else if (newClient.authmethod == "CryptoSign") {
       client = Client(
         config: ClientConfig(
           serializer: serializer,
@@ -38,7 +38,7 @@ mixin SessionManager on StateManager {
           keepAliveInterval: const Duration(seconds: 10),
         ),
       );
-    } else if (newClient.authmethod == "anonymous") {
+    } else if (newClient.authmethod == "Anonymous") {
       client = Client(
         config: ClientConfig(
           serializer: serializer,
@@ -90,11 +90,11 @@ mixin SessionManager on StateManager {
 
   static Serializer _getSerializer(String? serializerString) {
     switch (serializerString) {
-      case "json":
+      case "JSON":
         return JSONSerializer();
-      case "cbor":
+      case "CBOR":
         return CBORSerializer();
-      case "msgpack":
+      case "MSGPACK":
         return MsgPackSerializer();
       default:
         throw Exception("Invalid serializer $serializerString");

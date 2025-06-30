@@ -90,6 +90,8 @@ class ClientController extends GetxController with StateManager, SessionManager 
       return "Connection refused";
     } else if (errorStr.contains("WebSocketChannelException")) {
       return "Failed host lookup: Name or service not known";
+    } else if (errorStr.contains("wamp.error.authentication_failed")) {
+      return "Authentication Failed";
     } else if (errorStr.contains("timed out")) {
       return "Connection timeout";
     }
@@ -105,8 +107,10 @@ class ClientController extends GetxController with StateManager, SessionManager 
     final authidController = TextEditingController(text: client?.authid ?? "");
     final secretController = TextEditingController(text: client?.secret ?? "");
 
-    final serializers = ["json", "msgpack", "cbor"];
-    final authMethods = ["anonymous", "ticket", "wamp-cra", "cryptoSign"];
+    bool obscurePassword = true;
+
+    final serializers = ["JSON", "MSGPACK", "CBOR"];
+    final authMethods = ["Anonymous", "Ticket", "WAMP-CRA", "CryptoSign"];
 
     var selectedSerializer =
         serializers.contains(client?.serializer) ? client?.serializer ?? serializers.first : serializers.first;
@@ -247,7 +251,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             labelText: "Authid",
                             context: context,
                             validator: (value) {
-                              if (selectedAuthMethod != "anonymous" && (value == null || value.isEmpty)) {
+                              if (selectedAuthMethod != "Anonymous" && (value == null || value.isEmpty)) {
                                 return "please enter an authid";
                               }
                               return null;
@@ -283,12 +287,28 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             icon: const Icon(Icons.arrow_drop_down),
                           ),
                         ),
-                        SizedBox(height: _responsiveSpacing(context)),
                         if (selectedAuthMethod != "anonymous")
-                          _buildTextField(
+                          TextFormField(
                             controller: secretController,
-                            labelText: _getSecretLabel(selectedAuthMethod),
-                            context: context,
+                            decoration: InputDecoration(
+                              labelText: _getSecretLabel(selectedAuthMethod),
+                              isDense: true,
+                              contentPadding: _responsivePadding(context),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    obscurePassword = !obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
+                            obscureText: obscurePassword,
                             validator: (value) {
                               if (value!.isEmpty) {
                                 return "please enter ${_getSecretLabel(selectedAuthMethod).toLowerCase()}";
@@ -400,12 +420,12 @@ class ClientController extends GetxController with StateManager, SessionManager 
 
   String _getSecretLabel(String authMethod) {
     switch (authMethod) {
-      case "ticket":
-        return "ticket";
-      case "wamp-cra":
-        return "secret";
-      case "cryptoSign":
-        return "private key";
+      case "Ticket":
+        return "Ticket";
+      case "WAMP-CRA":
+        return "Secret";
+      case "CryptoSign":
+        return "Private key";
       default:
         return "";
     }
