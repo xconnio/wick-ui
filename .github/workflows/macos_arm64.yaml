@@ -1,0 +1,42 @@
+name: Build Flutter macOS App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install Flutter
+      uses: subosito/flutter-action@v2
+      with:
+          channel: stable
+          flutter-version: 3.32.0
+
+    - name: Enable macOS support
+      run: flutter config --enable-macos-desktop
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Build macOS App
+      run: flutter build macos
+
+    - name: Archive built app
+      run: |
+        mkdir -p build_artifacts
+        cp -R build/macos/Build/Products/Release/*.app build_artifacts/
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-app
+        path: build_artifacts/
+
