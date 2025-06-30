@@ -287,6 +287,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             icon: const Icon(Icons.arrow_drop_down),
                           ),
                         ),
+                        SizedBox(height: _responsiveSpacing(context)),
                         if (selectedAuthMethod != "anonymous")
                           TextFormField(
                             controller: secretController,
