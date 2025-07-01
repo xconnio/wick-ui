@@ -108,7 +108,7 @@ class ActionView extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(6),
         child: Form(
           key: formKey,
           child: Column(

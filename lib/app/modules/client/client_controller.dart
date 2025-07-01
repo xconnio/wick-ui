@@ -165,7 +165,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
                                   context: context,
                                   validator: (value) {
                                     if (value!.isEmpty) {
-                                      return "Please enter a URI";
+                                      return "please enter a URI";
                                     }
                                     if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
                                       return "URI must start with ws:// or wss://";
@@ -190,7 +190,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
                                       context: context,
                                       validator: (value) {
                                         if (value!.isEmpty) {
-                                          return "Please enter a URI";
+                                          return "please enter a URI";
                                         }
                                         if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
                                           return "URI must start with ws:// or wss://";
@@ -211,7 +211,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
                             controller: realmController,
                             labelText: "Realm",
                             context: context,
-                            validator: (value) => value!.isEmpty ? "Please enter a realm" : null,
+                            validator: (value) => value!.isEmpty ? "please enter a realm" : null,
                           ),
                           fieldTwo: DropdownButtonFormField<String>(
                             value: selectedSerializer,
@@ -288,7 +288,7 @@ class ClientController extends GetxController with StateManager, SessionManager 
                           ),
                         ),
                         SizedBox(height: _responsiveSpacing(context)),
-                        if (selectedAuthMethod != "anonymous")
+                        if (selectedAuthMethod != "Anonymous")
                           TextFormField(
                             controller: secretController,
                             decoration: InputDecoration(
