@@ -100,77 +100,90 @@ class ActionView extends StatelessWidget {
   ) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-    final double width = MediaQuery.of(context).size.width;
-    final bool isMobile = width < 600 &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS ||
-            kIsWeb); // Mobile native or mobile browser
+    final bool isMobileApp =
+        !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Form(
-          key: formKey,
-          child: Column(
-            children: isMobile
-                ? [
-                    TextFormField(
-                      controller: actionController.uriController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: "Procedure",
-                        hintText: "Enter Procedure URI",
-                        prefixIcon: Icon(Icons.link, size: 20),
-                      ),
-                      validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: _buildDropdown(tabKey, actionController, clientController),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: _buildWampMethodButton(tabKey, actionController),
-                        ),
-                      ],
-                    ),
-                  ]
-                : [
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: _buildDropdown(tabKey, actionController, clientController),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 4,
-                          child: TextFormField(
-                            controller: actionController.uriController,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: "Procedure",
-                              hintText: "Enter Procedure URI",
-                              prefixIcon: Icon(Icons.link, size: 20),
-                            ),
-                            validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: _buildWampMethodButton(tabKey, actionController),
-                        ),
-                      ],
-                    ),
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isMobileWeb = kIsWeb && constraints.maxWidth < 600;
+        final bool isStackedLayout = isMobileApp || isMobileWeb;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          margin: const EdgeInsets.only(bottom: 4),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade800),
           ),
-        ),
-      ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              children: isStackedLayout
+                  ? [
+                      TextFormField(
+                        controller: actionController.uriController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: "Procedure",
+                          hintText: "Enter Procedure URI",
+                          prefixIcon: Icon(Icons.link, size: 20),
+                        ),
+                        keyboardType: TextInputType.text,
+                        textInputAction: TextInputAction.done,
+                        validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _buildDropdown(tabKey, actionController, clientController),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 2,
+                            child: _buildWampMethodButton(tabKey, actionController),
+                          ),
+                        ],
+                      ),
+                    ]
+                  : [
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _buildDropdown(tabKey, actionController, clientController),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 4,
+                            child: TextFormField(
+                              controller: actionController.uriController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: const InputDecoration(
+                                labelText: "Procedure",
+                                hintText: "Enter Procedure URI",
+                                prefixIcon: Icon(Icons.link, size: 20),
+                              ),
+                              keyboardType: TextInputType.text,
+                              textInputAction: TextInputAction.done,
+                              validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 2,
+                            child: _buildWampMethodButton(tabKey, actionController),
+                          ),
+                        ],
+                      ),
+                    ],
+            ),
+          ),
+        );
+      },
     );
   }
 
