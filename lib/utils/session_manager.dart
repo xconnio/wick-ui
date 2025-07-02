@@ -90,11 +90,11 @@ mixin SessionManager on StateManager {
 
   static Serializer _getSerializer(String? serializerString) {
     switch (serializerString) {
-      case "JSON":
+      case "json":
         return JSONSerializer();
-      case "CBOR":
+      case "cbor":
         return CBORSerializer();
-      case "MSGPACK":
+      case "msgpack":
         return MsgPackSerializer();
       default:
         throw Exception("Invalid serializer $serializerString");
