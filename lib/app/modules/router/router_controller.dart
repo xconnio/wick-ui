@@ -290,9 +290,9 @@ class RouterController extends GetxController with StateManager {
       text: config?.transports.isNotEmpty ?? false ? config!.transports.first.port.toString() : "8080",
     );
     final RxMap<String, bool> selectedSerializers = {
-      "json": config!.transports.isNotEmpty && config.transports.first.serializers.contains("json"),
-      "msgpack": config.transports.isNotEmpty && config.transports.first.serializers.contains("msgpack"),
-      "cbor": config.transports.isNotEmpty && config.transports.first.serializers.contains("cbor"),
+      "json": config?.transports.firstOrNull?.serializers.contains("json") ?? true,
+      "msgpack": config?.transports.firstOrNull?.serializers.contains("msgpack") ?? false,
+      "cbor": config?.transports.firstOrNull?.serializers.contains("cbor") ?? false,
     }.obs;
 
     final RxString nameError = RxString("");
