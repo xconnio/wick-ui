@@ -9,6 +9,7 @@ class RouterCard extends StatelessWidget {
   const RouterCard({
     required this.controller,
     required Key key,
+    required this.routerName,
     required this.realmName,
     required this.status,
     required this.realm,
@@ -21,6 +22,7 @@ class RouterCard extends StatelessWidget {
   }) : super(key: key);
 
   final RouterController controller;
+  final String routerName;
   final String realmName;
   final String status;
   final String realm;
@@ -33,76 +35,74 @@ class RouterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    realmName,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+    return Obx(
+      () => Card(
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      routerName,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
                   ),
-                ),
-                Obx(
-                  () => StatusIndicator(
+                  StatusIndicator(
                     toolTipMsg: "",
                     isActive: controller.runningRouters[realmName] ?? false,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            InfoRow(icon: Icons.settings_ethernet, label: "realm", value: port),
-            InfoRow(
-              icon: Icons.data_array,
-              label: "Realm",
-              value: realmName,
-            ),
-            const SizedBox(height: 12),
-            InfoRow(icon: Icons.settings_ethernet, label: "Port", value: port),
-            InfoRow(
-              icon: Icons.data_array,
-              label: "Serializers",
-              value: serializers,
-            ),
-            const Divider(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                FilledButton.tonalIcon(
-                  icon: const Icon(Icons.edit, size: 18),
-                  label: const Text("Edit"),
-                  onPressed: onEdit,
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: onDelete,
-                      style: IconButton.styleFrom(
-                        foregroundColor: Colors.red.shade700,
+                ],
+              ),
+              const SizedBox(height: 12),
+              InfoRow(
+                icon: Icons.public,
+                label: "Realm",
+                value: realm,
+              ),
+              InfoRow(icon: Icons.settings_ethernet, label: "Port", value: port),
+              InfoRow(
+                icon: Icons.data_array,
+                label: "Serializers",
+                value: serializers,
+              ),
+              const Divider(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  FilledButton.tonalIcon(
+                    icon: const Icon(Icons.edit, size: 18),
+                    label: const Text("Edit"),
+                    onPressed: onEdit,
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: onDelete,
+                        style: IconButton.styleFrom(
+                          foregroundColor: Colors.red.shade700,
+                        ),
                       ),
-                    ),
-                    Obx(
-                      () => Switch.adaptive(
+                      Switch.adaptive(
                         value: controller.runningRouters[realmName] ?? false,
-                        onChanged: (value) => onToggle(),
+                        onChanged: (value) {
+                          onToggle();
+                        },
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -113,6 +113,7 @@ class RouterCard extends StatelessWidget {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty<RouterController>("controller", controller))
+      ..add(StringProperty("routerName", routerName))
       ..add(StringProperty("realmName", realmName))
       ..add(StringProperty("status", status))
       ..add(StringProperty("port", port))

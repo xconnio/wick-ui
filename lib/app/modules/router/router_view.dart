@@ -29,12 +29,12 @@ class RouterView extends StatelessWidget {
                 if (realm == null) {
                   return const SizedBox.shrink();
                 }
-
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: RouterCard(
                     controller: controller,
                     key: ValueKey(realm.name),
+                    routerName: config.name.isNotEmpty ? config.name : "",
                     realmName: realm.name,
                     status: controller.runningRouters[realm.name] ?? false ? "Running" : "Stopped",
                     realm: realm.name,

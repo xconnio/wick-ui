@@ -65,14 +65,10 @@ class RouterController extends GetxController with StateManager {
             final transport = config.transports.first;
             final server = startRouter("localhost", transport.port, [realm.name]);
             activeRouters[realm.name] = server;
-            log(
-              "RouterController: Restored router '${realm.name}' on port ${transport.port}",
-            );
+            log("RouterController: Restored router '${realm.name}' on port ${transport.port}");
           } on Exception catch (e) {
             runningRouters[realm.name] = false;
-            log(
-              "RouterController: Failed to restore router '${realm.name}': $e",
-            );
+            log("RouterController: Failed to restore router '${realm.name}': $e");
           }
         }
       }
@@ -80,37 +76,75 @@ class RouterController extends GetxController with StateManager {
   }
 
   Future<void> runRouter(RealmConfig realm) async {
+    log("RouterController: Attempting to start router '${realm.name}'");
     try {
-      final config = routerConfigs.firstWhere((c) => c.realms.contains(realm));
+      final config = routerConfigs.firstWhere(
+        (c) => c.realms.contains(realm),
+        orElse: () {
+          log("RouterController: No config found for realm '${realm.name}'");
+          return RouterConfigModel(
+            version: "1",
+            name: "Unnamed Router",
+            realms: [realm],
+            transports: [
+              TransportConfig(port: 8080, serializers: ["json"]),
+            ],
+            authenticators: AuthenticatorConfig(
+              cryptosign: [],
+              wampcra: [],
+              ticket: [],
+              anonymous: [],
+            ),
+          );
+        },
+      );
       final transport = config.transports.first;
       if (runningRouters[realm.name] ?? false) {
         log("RouterController: Router '${realm.name}' already running");
         return;
       }
+      log("RouterController: Starting router '${realm.name}' on port ${transport.port}");
       final server = startRouter("localhost", transport.port, [realm.name]);
       activeRouters[realm.name] = server;
-      runningRouters[realm.name] = true;
+      runningRouters.update(realm.name, (value) => true, ifAbsent: () => true);
+      log("RouterController: Set runningRouters[${realm.name}] = true, map: $runningRouters");
       await saveRouterState();
-      log(
-        "RouterController: Started router '${realm.name}' on port ${transport.port}",
-      );
-    } on Exception catch (e) {
-      log("RouterController: Failed to start router '${realm.name}': $e");
+      routerConfigs.refresh();
+    } on Exception catch (e, stackTrace) {
+      log("RouterController: Failed to start router '${realm.name}': $e\nStackTrace: $stackTrace");
+      runningRouters.update(realm.name, (value) => false, ifAbsent: () => false);
+      log("RouterController: Set runningRouters[${realm.name}] = false, map: $runningRouters");
+      await saveRouterState();
+      routerConfigs.refresh();
     }
   }
 
   Future<void> stopRouter(String realmName) async {
+    log("RouterController: Attempting to stop router '$realmName'");
     try {
       final server = activeRouters[realmName];
-      if (server != null) {
-        await server.close();
-        activeRouters.remove(realmName);
-        runningRouters[realmName] = false;
+      if (server == null) {
+        log("RouterController: No active server found for '$realmName'");
+        runningRouters.update(realmName, (value) => false, ifAbsent: () => false);
+        log("RouterController: Set runningRouters[$realmName] = false, map: $runningRouters");
         await saveRouterState();
-        log("RouterController: Stopped router '$realmName'");
+        routerConfigs.refresh();
+        return;
       }
-    } on Exception catch (e) {
-      log("RouterController: Failed to stop router '$realmName': $e");
+      log("RouterController: Closing server for '$realmName'");
+      await server.close();
+      activeRouters.remove(realmName);
+      runningRouters.update(realmName, (value) => false, ifAbsent: () => false);
+      log("RouterController: Set runningRouters[$realmName] = false, map: $runningRouters");
+      await saveRouterState();
+      log("RouterController: Successfully stopped router '$realmName'");
+      routerConfigs.refresh();
+    } on Exception catch (e, stackTrace) {
+      log("RouterController: Failed to stop router '$realmName': $e\nStackTrace: $stackTrace");
+      runningRouters.update(realmName, (value) => false, ifAbsent: () => false);
+      log("RouterController: Set runningRouters[$realmName] = false, map: $runningRouters");
+      await saveRouterState();
+      routerConfigs.refresh();
     }
   }
 
@@ -125,6 +159,7 @@ class RouterController extends GetxController with StateManager {
       runningRouters.updateAll((key, value) => false);
       await clearRouterState();
       log("RouterController: All routers stopped and state cleared");
+      routerConfigs.refresh();
     } on Exception catch (e) {
       log("RouterController: Failed to stop all routers: $e");
     }
@@ -156,8 +191,26 @@ class RouterController extends GetxController with StateManager {
     }).toList();
   }
 
+  Future<bool> _isRouterNameUnique(String routerName, {int? excludeIndex}) async {
+    for (int i = 0; i < routerConfigs.length; i++) {
+      if (excludeIndex != null && i == excludeIndex) {
+        continue;
+      }
+      final config = routerConfigs[i];
+      if (config.name == routerName) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   Future<void> saveRouterConfig(RouterConfigModel config) async {
     try {
+      if (!await _isRouterNameUnique(config.name)) {
+        log("RouterController: Cannot save config, realm name '${config.name}' already exists");
+        return;
+      }
+
       final directory = await getApplicationDocumentsDirectory();
       final file = File("${directory.path}/router_config_${routerConfigs.length}.yaml");
 
@@ -170,13 +223,23 @@ class RouterController extends GetxController with StateManager {
       log("RouterController: Saved router config: ${file.path}");
     } on Exception catch (e) {
       log("RouterController: Save failed: $e");
+      Get.snackbar(
+        "Error",
+        "Failed to save router config: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
   Future<void> updateRouterConfig(int index, RouterConfigModel config) async {
     try {
+      if (!await _isRouterNameUnique(config.name, excludeIndex: index)) {
+        log("RouterController: Cannot update config, realm name '${config.name}' already exists");
+        return;
+      }
+
       final directory = await getApplicationDocumentsDirectory();
-      final file = File("${directory.path}/router_config_$index.yaml");
+      final file = File("${directory.path}/router W_config_$index.yaml");
 
       final yaml = YamlWriter().write(config.toJson());
       await file.writeAsString(yaml);
@@ -209,31 +272,36 @@ class RouterController extends GetxController with StateManager {
     RouterConfigModel? configToEdit,
     int? index,
   }) async {
+    log("RouterController: createRouterConfig called with configToEdit=$configToEdit, index=$index");
     final formKey = GlobalKey<FormState>();
-    final config = configToEdit ?? (index != null ? routerConfigs[index] : null);
+    final config =
+        configToEdit ?? (index != null && index >= 0 && index < routerConfigs.length ? routerConfigs[index] : null);
 
-    final TextEditingController versionController = TextEditingController(
+    final versionController = TextEditingController(
       text: config?.version ?? "1",
     );
-    final TextEditingController realmController = TextEditingController(
-      text: config != null && config.realms.isNotEmpty ? config.realms.first.name : "",
+    final nameController = TextEditingController(
+      text: config?.name ?? "",
     );
-    final TextEditingController transportPortController = TextEditingController(
-      text: config != null && config.transports.isNotEmpty ? config.transports.first.port.toString() : "",
+    final realmController = TextEditingController(
+      text: config?.realms.isNotEmpty ?? false ? config!.realms.first.name : "",
     );
-
+    final transportPortController = TextEditingController(
+      text: config?.transports.isNotEmpty ?? false ? config!.transports.first.port.toString() : "8080",
+    );
     final RxMap<String, bool> selectedSerializers = {
-      "json": config != null && config.transports.isNotEmpty && config.transports.first.serializers.contains("json"),
-      "msgpack":
-          config != null && config.transports.isNotEmpty && config.transports.first.serializers.contains("msgpack"),
-      "cbor": config != null && config.transports.isNotEmpty && config.transports.first.serializers.contains("cbor"),
+      "json": config!.transports.isNotEmpty && config.transports.first.serializers.contains("json"),
+      "msgpack": config.transports.isNotEmpty && config.transports.first.serializers.contains("msgpack"),
+      "cbor": config.transports.isNotEmpty && config.transports.first.serializers.contains("cbor"),
     }.obs;
+
+    final RxString nameError = RxString("");
 
     await Get.dialog(
       StatefulBuilder(
         builder: (context, setState) {
-          bool isDesktop = MediaQuery.of(context).size.width > 600;
-          double dialogWidth =
+          final isDesktop = MediaQuery.of(context).size.width > 600;
+          final dialogWidth =
               isDesktop ? MediaQuery.of(context).size.width * 0.6 : MediaQuery.of(context).size.width * 0.9;
 
           return AlertDialog(
@@ -251,41 +319,63 @@ class RouterController extends GetxController with StateManager {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildTextField(
-                          controller: versionController,
-                          labelText: "Version",
-                          context: context,
-                          validator: (value) => value!.isEmpty ? "Please enter a version" : null,
-                        ),
-                        SizedBox(height: _responsiveSpacing(context)),
-                        _buildTextField(
-                          controller: realmController,
-                          labelText: "Realm Name",
-                          context: context,
-                          validator: (value) => value!.isEmpty ? "Please enter a realm name" : null,
-                        ),
-                        SizedBox(height: _responsiveSpacing(context)),
-                        _buildResponsiveFields(
-                          isDesktop: isDesktop,
-                          context: context,
-                          fieldOne: _buildTextField(
-                            controller: transportPortController,
-                            labelText: "Transport Port",
+                        Obx(
+                          () => _buildTextField(
+                            controller: nameController,
+                            labelText: "Name",
                             context: context,
-                            keyboardType: TextInputType.number,
+                            errorText: nameError.value.isNotEmpty ? nameError.value : null,
                             validator: (value) {
                               if (value!.isEmpty) {
-                                return "Please enter a transport port";
-                              }
-                              final port = int.tryParse(value);
-                              if (port == null || port < 0 || port > 65535) {
-                                return "Port must be between 0 and 65535";
+                                return "Please enter a router name";
                               }
                               return null;
                             },
                           ),
-                          fieldTwo: Obx(
-                            () => Column(
+                        ),
+                        SizedBox(height: _responsiveSpacing(context)),
+                        _buildTextField(
+                          controller: realmController,
+                          labelText: "Realm",
+                          context: context,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Please enter a router realm";
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: _responsiveSpacing(context)),
+                        _buildTextField(
+                          controller: transportPortController,
+                          labelText: "Port",
+                          context: context,
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Please enter a router port";
+                            }
+                            final port = int.tryParse(value);
+                            if (port == null || port < 0 || port > 65535) {
+                              return "Port must be between 0 and 65535";
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: _responsiveSpacing(context)),
+                        FormField<List<String>>(
+                          initialValue: selectedSerializers.entries
+                              .where((entry) => entry.value)
+                              .map((entry) => entry.key)
+                              .toList(),
+                          validator: (selected) {
+                            if (selected == null || selected.isEmpty) {
+                              return "Please select at least one serializer";
+                            }
+                            return null;
+                          },
+                          builder: (field) {
+                            return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
@@ -297,17 +387,28 @@ class RouterController extends GetxController with StateManager {
                                     title: Text(entry.key),
                                     value: entry.value,
                                     onChanged: (value) {
-                                      setState(() {
-                                        selectedSerializers[entry.key] = value ?? false;
-                                      });
+                                      selectedSerializers[entry.key] = value ?? false;
+                                      field.didChange(
+                                        selectedSerializers.entries.where((e) => e.value).map((e) => e.key).toList(),
+                                      );
                                     },
                                     dense: true,
                                     contentPadding: EdgeInsets.zero,
                                   );
                                 }),
+                                if (field.hasError)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 16, top: 4),
+                                    child: Text(
+                                      field.errorText!,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.error,
+                                      ),
+                                    ),
+                                  ),
                               ],
-                            ),
-                          ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -322,16 +423,28 @@ class RouterController extends GetxController with StateManager {
               ),
               TextButton(
                 onPressed: () async {
+                  nameError.value = "";
+
                   if (formKey.currentState!.validate()) {
+                    final newRouterName = nameController.text;
+
+                    if (index == null && !await _isRouterNameUnique(newRouterName)) {
+                      nameError.value = 'Router name "$newRouterName" is already in use';
+                      return;
+                    }
+
+                    final selected =
+                        selectedSerializers.entries.where((entry) => entry.value).map((entry) => entry.key).toList();
+
                     final realmConfig = RealmConfig(name: realmController.text);
                     final transportConfig = TransportConfig(
                       port: int.parse(transportPortController.text),
-                      serializers:
-                          selectedSerializers.entries.where((entry) => entry.value).map((entry) => entry.key).toList(),
+                      serializers: selected,
                     );
 
                     final newConfig = RouterConfigModel(
                       version: versionController.text,
+                      name: nameController.text,
                       realms: [realmConfig],
                       transports: [transportConfig],
                       authenticators: AuthenticatorConfig(
@@ -361,45 +474,11 @@ class RouterController extends GetxController with StateManager {
     );
   }
 
-  Widget _buildResponsiveFields({
-    required bool isDesktop,
-    required BuildContext context,
-    required Widget fieldOne,
-    required Widget fieldTwo,
-  }) {
-    if (isDesktop) {
-      return Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(right: _responsiveSpacing(context) / 2),
-              child: fieldOne,
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(left: _responsiveSpacing(context) / 2),
-              child: fieldTwo,
-            ),
-          ),
-        ],
-      );
-    } else {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          fieldOne,
-          SizedBox(height: _responsiveSpacing(context)),
-          fieldTwo,
-        ],
-      );
-    }
-  }
-
   Widget _buildTextField({
     required TextEditingController controller,
     required String labelText,
     required BuildContext context,
+    String? errorText,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
@@ -407,6 +486,7 @@ class RouterController extends GetxController with StateManager {
       controller: controller,
       decoration: InputDecoration(
         labelText: labelText,
+        errorText: errorText,
         isDense: true,
         contentPadding: _responsivePadding(context),
         border: OutlineInputBorder(
