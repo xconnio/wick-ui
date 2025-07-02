@@ -88,6 +88,8 @@ class ClientController extends GetxController with StateManager, SessionManager 
 
     if (errorStr.contains("Connection refused")) {
       return "Connection refused";
+    } else if (errorStr.contains("wamp.error.no_such_realm")) {
+      return "No such realm";
     } else if (errorStr.contains("WebSocketChannelException")) {
       return "Failed host lookup: Name or service not known";
     } else if (errorStr.contains("wamp.error.authentication_failed")) {
