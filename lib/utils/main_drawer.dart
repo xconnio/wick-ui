@@ -32,14 +32,14 @@ class MainDrawer extends StatelessWidget {
             leading: const Icon(Icons.account_tree),
             title: const Text("Actions"),
             onTap: () async {
-              await Get.offAllNamed(AppRoutes.action);
+              await Get.toNamed(AppRoutes.action); // Changed to Get.toNamed
             },
           ),
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text("Clients"),
             onTap: () async {
-              await Get.offAllNamed(AppRoutes.client);
+              await Get.toNamed(AppRoutes.client); // Changed to Get.toNamed
             },
           ),
           if (!kIsWeb)
@@ -47,7 +47,7 @@ class MainDrawer extends StatelessWidget {
               leading: const Icon(Icons.route_rounded),
               title: const Text("Routers"),
               onTap: () async {
-                await Get.offAllNamed(AppRoutes.router);
+                await Get.toNamed(AppRoutes.router); // Changed to Get.toNamed
               },
             ),
         ],
