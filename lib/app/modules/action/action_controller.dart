@@ -145,11 +145,6 @@ class ActionController extends GetxController {
       await clientController.getOrCreateSession(client);
     }
 
-    if (uri.isEmpty) {
-      _addLog("URI cannot be empty.");
-      return;
-    }
-
     final result = await _executeWampAction(
       actionType,
       session!,
