@@ -1,3 +1,5 @@
+import "dart:developer";
+
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:get/get.dart";
@@ -37,29 +39,22 @@ class ActionView extends StatelessWidget {
     final paramsTag = "params_$tabKey";
 
     if (!Get.isRegistered<ActionController>(tag: actionTag)) {
-      Get.lazyPut<ActionController>(
-        ActionController.new,
-        tag: actionTag,
-        fenix: true,
-      );
+      Get.put<ActionController>(ActionController(), tag: actionTag, permanent: true);
     }
 
     if (!Get.isRegistered<ActionParamsController>(tag: paramsTag)) {
-      Get.lazyPut<ActionParamsController>(
-        ActionParamsController.new,
-        tag: paramsTag,
-        fenix: true,
-      );
+      Get.put<ActionParamsController>(ActionParamsController(), tag: paramsTag, permanent: true);
     }
 
     final actionController = Get.find<ActionController>(tag: actionTag);
     final clientController = Get.find<ClientController>();
+    final GlobalKey<FormState> uriFormKey = GlobalKey<FormState>(debugLabel: "form_$tabKey");
 
     return Padding(
       padding: EdgeInsets.zero,
       child: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _buildUriBar(context, tabKey, actionController, clientController)),
+          SliverToBoxAdapter(child: _buildUriBar(context, tabKey, actionController, clientController, uriFormKey)),
           const SliverToBoxAdapter(child: SizedBox(height: 6)),
           SliverToBoxAdapter(child: _buildParamsSection(tabKey, actionController)),
           const SliverToBoxAdapter(child: SizedBox(height: 6)),
@@ -97,9 +92,8 @@ class ActionView extends StatelessWidget {
     int tabKey,
     ActionController actionController,
     ClientController clientController,
+    GlobalKey<FormState> uriFormKey,
   ) {
-    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-
     final bool isMobileApp =
         !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
 
@@ -118,7 +112,7 @@ class ActionView extends StatelessWidget {
             border: Border.all(color: Colors.grey.shade800),
           ),
           child: Form(
-            key: formKey,
+            key: uriFormKey,
             child: Column(
               children: isStackedLayout
                   ? [
@@ -129,10 +123,21 @@ class ActionView extends StatelessWidget {
                           labelText: "Procedure",
                           hintText: "Enter Procedure URI",
                           prefixIcon: Icon(Icons.link, size: 20),
+                          errorStyle: TextStyle(color: Colors.redAccent),
                         ),
                         keyboardType: TextInputType.text,
                         textInputAction: TextInputAction.done,
-                        validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            log("URI validation failed: URI is empty");
+                            return "URI cannot be empty.";
+                          }
+                          log("URI validation passed: $value");
+                          return null;
+                        },
+                        onChanged: (value) {
+                          actionController.errorMessage.value = ""; // Clear error on change, but no validation
+                        },
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -144,7 +149,7 @@ class ActionView extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             flex: 2,
-                            child: _buildWampMethodButton(tabKey, actionController),
+                            child: _buildWampMethodButton(tabKey, actionController, uriFormKey),
                           ),
                         ],
                       ),
@@ -166,16 +171,27 @@ class ActionView extends StatelessWidget {
                                 labelText: "Procedure",
                                 hintText: "Enter Procedure URI",
                                 prefixIcon: Icon(Icons.link, size: 20),
+                                errorStyle: TextStyle(color: Colors.redAccent),
                               ),
                               keyboardType: TextInputType.text,
                               textInputAction: TextInputAction.done,
-                              validator: (value) => value == null || value.isEmpty ? "URI cannot be empty." : null,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  log("URI validation failed: URI is empty");
+                                  return "URI cannot be empty.";
+                                }
+                                log("URI validation passed: $value");
+                                return null;
+                              },
+                              onChanged: (value) {
+                                actionController.errorMessage.value = ""; // Clear error on change, but no validation
+                              },
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             flex: 2,
-                            child: _buildWampMethodButton(tabKey, actionController),
+                            child: _buildWampMethodButton(tabKey, actionController, uriFormKey),
                           ),
                         ],
                       ),
@@ -271,6 +287,7 @@ class ActionView extends StatelessWidget {
   Widget _buildWampMethodButton(
     int tabKey,
     ActionController actionController,
+    GlobalKey<FormState> uriFormKey,
   ) {
     final ActionParamsController paramsController = Get.find<ActionParamsController>(tag: "params_$tabKey");
 
@@ -278,7 +295,7 @@ class ActionView extends StatelessWidget {
       final uri = actionController.uriController.text.trim();
       final selected = actionController.selectedMethod.value.toLowerCase();
 
-      String displayMethod = selected.capitalizeFirst!;
+      String displayMethod = selected.replaceFirst(RegExp(r"^\w"), selected[0].toUpperCase());
       if (selected == "register" || selected == "unregister") {
         displayMethod = actionController.registrations.containsKey(uri) ? "Unregister" : "Register";
       } else if (selected == "subscribe" || selected == "unsubscribe") {
@@ -317,32 +334,50 @@ class ActionView extends StatelessWidget {
                       topLeft: Radius.circular(8),
                       bottomLeft: Radius.circular(8),
                     ),
+                    splashColor: Colors.blueAccent.withAlpha(76),
                     onTap: actionController.isActionInProgress.value
                         ? null
                         : () async {
-                            if (paramsController.paramsFormKey.currentState?.validate() ?? false) {
-                              List<String> args = paramsController.getArgs();
-                              Map<String, String> kwArgs = paramsController.getKwArgs();
+                            log("WAMP method button tapped: $selected, URI: $uri");
+                            actionController.errorMessage.value = ""; // Clear stale errors
+                            final uriFormState = uriFormKey.currentState;
+                            final paramsFormState = paramsController.paramsFormKey.currentState;
 
-                              String actualMethod = selected;
-                              if (selected == "register" && actionController.registrations.containsKey(uri)) {
-                                actualMethod = "unregister";
-                              } else if (selected == "unregister" && !actionController.registrations.containsKey(uri)) {
-                                actualMethod = "register";
-                              } else if (selected == "subscribe" && actionController.subscriptions.containsKey(uri)) {
-                                actualMethod = "unsubscribe";
-                              } else if (selected == "unsubscribe" &&
-                                  !actionController.subscriptions.containsKey(uri)) {
-                                actualMethod = "subscribe";
-                              }
-
-                              await actionController.performAction(
-                                actualMethod,
-                                actionController.uriController.text,
-                                args,
-                                kwArgs,
-                              );
+                            if (uriFormState == null || !uriFormState.validate()) {
+                              log("URI form validation failed for tab $tabKey");
+                              actionController.errorMessage.value = "Please enter a valid URI.";
+                              return;
                             }
+
+                            if (paramsFormState != null &&
+                                paramsController.params.isNotEmpty &&
+                                !paramsFormState.validate()) {
+                              log("Params form validation failed for tab $tabKey");
+                              actionController.errorMessage.value = "Please correct the argument errors.";
+                              return;
+                            }
+
+                            List<String> args = paramsController.getArgs();
+                            Map<String, String> kwArgs = paramsController.getKwArgs();
+
+                            String actualMethod = selected;
+                            if (selected == "register" && actionController.registrations.containsKey(uri)) {
+                              actualMethod = "unregister";
+                            } else if (selected == "unregister" && !actionController.registrations.containsKey(uri)) {
+                              actualMethod = "register";
+                            } else if (selected == "subscribe" && actionController.subscriptions.containsKey(uri)) {
+                              actualMethod = "unsubscribe";
+                            } else if (selected == "unsubscribe" && !actionController.subscriptions.containsKey(uri)) {
+                              actualMethod = "subscribe";
+                            }
+
+                            log("Performing action: $actualMethod with args: $args, kwArgs: $kwArgs");
+                            await actionController.performAction(
+                              actualMethod,
+                              uri,
+                              args,
+                              kwArgs,
+                            );
                           },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -367,6 +402,7 @@ class ActionView extends StatelessWidget {
               ),
               PopupMenuButton<String>(
                 onSelected: (String newValue) {
+                  log("Selected WAMP method: $newValue");
                   actionController.selectedMethod.value = newValue.toLowerCase();
                 },
                 itemBuilder: (context) {
@@ -396,6 +432,8 @@ class ActionView extends StatelessWidget {
 
   Widget _buildParamsSection(int tabKey, ActionController actionController) {
     final ActionParamsController paramsController = Get.find<ActionParamsController>(tag: "params_$tabKey");
+    final GlobalKey<FormState> paramsFormKey = GlobalKey<FormState>(debugLabel: "params_form_$tabKey");
+
     final bool isMobile =
         !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
 
@@ -403,7 +441,7 @@ class ActionView extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Form(
-          key: paramsController.paramsFormKey,
+          key: paramsFormKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -512,9 +550,16 @@ class ActionView extends StatelessWidget {
                                     style: const TextStyle(color: Colors.white),
                                     decoration: InputDecoration(
                                       labelText: "Argument ${index + 1}",
-                                      hintText: "Enter value",
+                                      hintText: "Enter value (optional)",
+                                      errorStyle: const TextStyle(color: Colors.redAccent),
                                     ),
-                                    validator: param.validateArg,
+                                    validator: (value) {
+                                      log("Validating arg ${index + 1}: $value");
+                                      return null; // Allow empty arguments
+                                    },
+                                    onChanged: (value) {
+                                      actionController.errorMessage.value = ""; // Clear error, no validation
+                                    },
                                   )
                                 : isMobile
                                     ? Column(
@@ -525,8 +570,19 @@ class ActionView extends StatelessWidget {
                                             decoration: const InputDecoration(
                                               labelText: "Key",
                                               hintText: "Enter key name",
+                                              errorStyle: TextStyle(color: Colors.redAccent),
                                             ),
-                                            validator: param.validateKey,
+                                            validator: (value) {
+                                              if (value == null || value.trim().isEmpty) {
+                                                log("Key validation failed for kwarg ${index + 1}");
+                                                return "Key cannot be empty.";
+                                              }
+                                              log("Key validation passed: $value");
+                                              return null;
+                                            },
+                                            onChanged: (value) {
+                                              actionController.errorMessage.value = ""; // Clear error, no validation
+                                            },
                                           ),
                                           const SizedBox(height: 8),
                                           TextFormField(
@@ -534,9 +590,16 @@ class ActionView extends StatelessWidget {
                                             style: const TextStyle(color: Colors.white),
                                             decoration: const InputDecoration(
                                               labelText: "Value",
-                                              hintText: "Enter value",
+                                              hintText: "Enter value (optional)",
+                                              errorStyle: TextStyle(color: Colors.redAccent),
                                             ),
-                                            validator: param.validateValue,
+                                            validator: (value) {
+                                              log("Value validation passed for kwarg ${index + 1}: $value");
+                                              return null;
+                                            },
+                                            onChanged: (value) {
+                                              actionController.errorMessage.value = ""; // Clear error, no validation
+                                            },
                                           ),
                                         ],
                                       )
@@ -549,8 +612,19 @@ class ActionView extends StatelessWidget {
                                               decoration: const InputDecoration(
                                                 labelText: "Key",
                                                 hintText: "Enter key name",
+                                                errorStyle: TextStyle(color: Colors.redAccent),
                                               ),
-                                              validator: param.validateKey,
+                                              validator: (value) {
+                                                if (value == null || value.trim().isEmpty) {
+                                                  log("Key validation failed for kwarg ${index + 1}");
+                                                  return "Key cannot be empty.";
+                                                }
+                                                log("Key validation passed: $value");
+                                                return null;
+                                              },
+                                              onChanged: (value) {
+                                                actionController.errorMessage.value = ""; // Clear error, no validation
+                                              },
                                             ),
                                           ),
                                           const SizedBox(width: 8),
@@ -560,9 +634,16 @@ class ActionView extends StatelessWidget {
                                               style: const TextStyle(color: Colors.white),
                                               decoration: const InputDecoration(
                                                 labelText: "Value",
-                                                hintText: "Enter value",
+                                                hintText: "Enter value (optional)",
+                                                errorStyle: TextStyle(color: Colors.redAccent),
                                               ),
-                                              validator: param.validateValue,
+                                              validator: (value) {
+                                                log("Value validation passed for kwarg ${index + 1}: $value");
+                                                return null;
+                                              },
+                                              onChanged: (value) {
+                                                actionController.errorMessage.value = ""; // Clear error, no validation
+                                              },
                                             ),
                                           ),
                                         ],
