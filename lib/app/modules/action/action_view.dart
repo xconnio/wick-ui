@@ -136,7 +136,7 @@ class ActionView extends StatelessWidget {
                           return null;
                         },
                         onChanged: (value) {
-                          actionController.errorMessage.value = ""; // Clear error on change, but no validation
+                          actionController.errorMessage.value = "";
                         },
                       ),
                       const SizedBox(height: 8),
@@ -184,7 +184,7 @@ class ActionView extends StatelessWidget {
                                 return null;
                               },
                               onChanged: (value) {
-                                actionController.errorMessage.value = ""; // Clear error on change, but no validation
+                                actionController.errorMessage.value = "";
                               },
                             ),
                           ),
@@ -339,7 +339,7 @@ class ActionView extends StatelessWidget {
                         ? null
                         : () async {
                             log("WAMP method button tapped: $selected, URI: $uri");
-                            actionController.errorMessage.value = ""; // Clear stale errors
+                            actionController.errorMessage.value = "";
                             final uriFormState = uriFormKey.currentState;
                             final paramsFormState = paramsController.paramsFormKey.currentState;
 
@@ -555,10 +555,10 @@ class ActionView extends StatelessWidget {
                                     ),
                                     validator: (value) {
                                       log("Validating arg ${index + 1}: $value");
-                                      return null; // Allow empty arguments
+                                      return null;
                                     },
                                     onChanged: (value) {
-                                      actionController.errorMessage.value = ""; // Clear error, no validation
+                                      actionController.errorMessage.value = "";
                                     },
                                   )
                                 : isMobile
@@ -581,7 +581,7 @@ class ActionView extends StatelessWidget {
                                               return null;
                                             },
                                             onChanged: (value) {
-                                              actionController.errorMessage.value = ""; // Clear error, no validation
+                                              actionController.errorMessage.value = "";
                                             },
                                           ),
                                           const SizedBox(height: 8),
@@ -598,7 +598,7 @@ class ActionView extends StatelessWidget {
                                               return null;
                                             },
                                             onChanged: (value) {
-                                              actionController.errorMessage.value = ""; // Clear error, no validation
+                                              actionController.errorMessage.value = "";
                                             },
                                           ),
                                         ],
@@ -623,7 +623,7 @@ class ActionView extends StatelessWidget {
                                                 return null;
                                               },
                                               onChanged: (value) {
-                                                actionController.errorMessage.value = ""; // Clear error, no validation
+                                                actionController.errorMessage.value = "";
                                               },
                                             ),
                                           ),
@@ -642,7 +642,7 @@ class ActionView extends StatelessWidget {
                                                 return null;
                                               },
                                               onChanged: (value) {
-                                                actionController.errorMessage.value = ""; // Clear error, no validation
+                                                actionController.errorMessage.value = "";
                                               },
                                             ),
                                           ),

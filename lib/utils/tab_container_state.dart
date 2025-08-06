@@ -26,12 +26,13 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
 
   TabController? _controller;
   final TabStateController _tabStateController = Get.put(TabStateController(), permanent: true);
+  final TextEditingController _nameController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     if (_tabStateController.tabKeys.isEmpty) {
-      _tabStateController.addTab(); // Initialize with at least one tab
+      _tabStateController.addTab();
     }
   }
 
@@ -42,8 +43,19 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
       length: _tabStateController.tabKeys.length,
       initialIndex: selectedIndex.clamp(0, _tabStateController.tabKeys.length - 1),
     )..addListener(() {
-        _tabStateController.setSelectedIndex(_controller!.index);
+        _tabStateController.selectedIndex(_controller!.index);
+        final currentKey = _tabStateController.tabKeys[_controller!.index];
+        final actionTag = "action_$currentKey";
+        if (Get.isRegistered<ActionController>(tag: actionTag)) {
+          Get.find<ActionController>(tag: actionTag).refresh();
+        }
       });
+  }
+
+  void _startEditing(int key) {
+    setState(() {
+      _nameController.text = _tabStateController.getDisplayName(key);
+    });
   }
 
   Future<void> _removeTab(int key) async {
@@ -60,19 +72,23 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
     _tabStateController.removeTab(key);
   }
 
-  Tab _buildTab(String title, int key) {
+  Tab _buildTab(int key) {
     final bool showClose = _tabStateController.tabKeys.length > 1;
+    final tabName = _tabStateController.getDisplayName(key);
 
     return Tab(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
+          GestureDetector(
+            onDoubleTap: () => _startEditing(key),
+            child: Text(
+              tabName,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
             ),
           ),
           if (showClose) ...[
@@ -107,14 +123,26 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
     final paramsTag = "params_$key";
 
     if (!Get.isRegistered<ActionController>(tag: actionTag)) {
-      Get.put<ActionController>(ActionController(), tag: actionTag, permanent: true);
+      final controller = Get.put<ActionController>(
+        ActionController(),
+        tag: actionTag,
+        permanent: true,
+      );
+      controller.tag = actionTag;
     }
 
     if (!Get.isRegistered<ActionParamsController>(tag: paramsTag)) {
-      Get.put<ActionParamsController>(ActionParamsController(), tag: paramsTag, permanent: true);
+      Get.put<ActionParamsController>(
+        ActionParamsController(),
+        tag: paramsTag,
+        permanent: true,
+      );
     }
 
-    return widget.buildScreen(context, key);
+    return GetBuilder<ActionController>(
+      tag: actionTag,
+      builder: (controller) => widget.buildScreen(context, key),
+    );
   }
 
   @override
@@ -122,7 +150,6 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
     return Padding(
       padding: const EdgeInsets.all(_padding),
       child: Obx(() {
-        // Reinitialize controller when tabKeys changes
         _initializeController(_tabStateController.selectedIndex.value);
 
         if (_tabStateController.tabKeys.isEmpty) {
@@ -147,7 +174,7 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
                       controller: _controller,
                       isScrollable: true,
                       indicatorColor: Colors.blueAccent,
-                      tabs: _tabStateController.tabKeys.map((key) => _buildTab("Tab ${key + 1}", key)).toList(),
+                      tabs: _tabStateController.tabKeys.map(_buildTab).toList(),
                     ),
                   ),
                   _addTabButton(),
