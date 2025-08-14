@@ -11,6 +11,8 @@ class MainDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      shape: const RoundedRectangleBorder(
+      ),
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -32,14 +34,14 @@ class MainDrawer extends StatelessWidget {
             leading: const Icon(Icons.account_tree),
             title: const Text("Actions"),
             onTap: () async {
-              await Get.toNamed(AppRoutes.action); // Changed to Get.toNamed
+              await Get.toNamed(AppRoutes.action);
             },
           ),
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text("Clients"),
             onTap: () async {
-              await Get.toNamed(AppRoutes.client); // Changed to Get.toNamed
+              await Get.toNamed(AppRoutes.client);
             },
           ),
           if (!kIsWeb)
@@ -47,7 +49,7 @@ class MainDrawer extends StatelessWidget {
               leading: const Icon(Icons.route_rounded),
               title: const Text("Routers"),
               onTap: () async {
-                await Get.toNamed(AppRoutes.router); // Changed to Get.toNamed
+                await Get.toNamed(AppRoutes.router);
               },
             ),
         ],
