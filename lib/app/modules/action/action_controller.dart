@@ -5,14 +5,19 @@ import "package:flutter/material.dart";
 import "package:get/get.dart";
 import "package:wick_ui/app/data/models/client_model.dart";
 import "package:wick_ui/app/modules/client/client_controller.dart";
+import "package:wick_ui/utils/tab_container_controller.dart";
 import "package:xconn/xconn.dart";
 
 class ActionController extends GetxController {
+  final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
+  bool _isRefreshing = false;
   final Rx<ClientModel?> selectedClient = Rx<ClientModel?>(null);
   final RxList<String> logs = <String>[].obs;
   final RxString errorMessage = "".obs;
   final RxString selectedMethod = "Call".obs;
   final RxBool isActionInProgress = false.obs;
+  final RxBool isInitialized = false.obs;
+  String? tag;
 
   final Map<String, Registration> registrations = {};
   final Map<String, Subscription> subscriptions = {};
@@ -27,6 +32,23 @@ class ActionController extends GetxController {
     super.onInit();
     uriController = TextEditingController();
     trySetInitialClient();
+    isInitialized.value = true;
+
+    ever(selectedClient, (client) {
+      if (client != null) {
+        _updateTabName(client.name);
+      }
+    });
+  }
+
+  void _updateTabName(String clientName) {
+    final tabStateController = Get.find<TabStateController>();
+    final actionTag = tag?.split("_").last;
+    final tabKey = int.tryParse(actionTag ?? "");
+
+    if (tabKey != null) {
+      tabStateController.updateClientName(tabKey, clientName);
+    }
   }
 
   @override
@@ -57,8 +79,6 @@ class ActionController extends GetxController {
         await session?.unsubscribe(sub);
       }
       subscriptions.clear();
-
-      _addLog("Cleaned up all registrations and subscriptions.");
     } on Exception catch (e) {
       _addLog("Cleanup error: $e");
     }
@@ -98,10 +118,17 @@ class ActionController extends GetxController {
     List<String> args,
     Map<String, String> kwArgs,
   ) async {
-    if (isActionInProgress.value) {
+    if (!isInitialized.value || isActionInProgress.value) {
       return;
     }
     isActionInProgress.value = true;
+
+    if (uri.isEmpty) {
+      _addLog("URI cannot be empty.");
+      isActionInProgress.value = false;
+      update();
+      return;
+    }
 
     try {
       await _performActionInternal(
@@ -115,6 +142,7 @@ class ActionController extends GetxController {
       _addLog("Critical Error: $e");
     } finally {
       isActionInProgress.value = false;
+      update();
     }
   }
 
@@ -139,18 +167,32 @@ class ActionController extends GetxController {
     Session? session;
     try {
       session = await clientController.getOrCreateSession(client);
+      if (session == null) {
+        session = await clientController.getOrCreateSession(client);
+        if (session == null) {
+          _addLog("Failed to establish session after retry for client '${client.name}'");
+          errorMessage.value = "No active session available.";
+          return;
+        }
+      }
     } on Exception catch (e) {
       _addLog("Failed to establish session for client '${client.name}': $e");
       clientController.currentSession = null;
-      await clientController.getOrCreateSession(client);
+      return;
     }
 
     final result = await _executeWampAction(
       actionType,
-      session!,
+      session,
       uri,
       args,
       kwArgs,
+    ).timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        _addLog("Action timed out for URI: $uri");
+        throw Exception("Request timed out");
+      },
     );
 
     if (result.error != null) {
@@ -181,7 +223,6 @@ class ActionController extends GetxController {
           return await _performUnregisterAction(session, uri);
         case "unsubscribe":
           return await _performUnsubscribeAction(session, uri);
-
         default:
           throw Exception("Unknown action type: $actionType");
       }
@@ -250,6 +291,7 @@ class ActionController extends GetxController {
         _addLog("Event received:\nargs:\n$formattedArgs\nkwargs:\n$formattedKwargs");
       });
       subscriptions[uri] = subscription;
+      _subscription = subscription as StreamSubscription?;
       selectedMethod.value = "unsubscribe";
       return Logs(data: "Subscribed to topic: $uri");
     } on Exception {
@@ -265,6 +307,9 @@ class ActionController extends GetxController {
     try {
       await session.unsubscribe(subscription);
       subscriptions.remove(uri);
+      if (identical(_subscription, subscription)) {
+        _subscription = null;
+      }
       selectedMethod.value = "subscribe";
       return Logs(data: "Unsubscribed from topic: $uri");
     } on Exception catch (e) {
@@ -288,6 +333,19 @@ class ActionController extends GetxController {
 
   String prettyJson(Object? json) {
     return const JsonEncoder.withIndent("  ").convert(json);
+  }
+
+  @override
+  void refresh([bool force = false]) {
+    if (_isRefreshing && !force) {
+      return;
+    }
+    _isRefreshing = true;
+    try {
+      update();
+    } finally {
+      _isRefreshing = false;
+    }
   }
 }
 
