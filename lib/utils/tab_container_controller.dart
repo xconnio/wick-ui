@@ -38,14 +38,26 @@ class TabStateController extends GetxController {
   }
 
   void updateClientName(int key, String name) {
-    if (!customNames.containsKey(key)) {
-      clientNames[key] = _getUniqueClientName(name, key);
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      return;
     }
+
+    if (customNames.containsKey(key)) {
+      return;
+    }
+
+    if (clientNames[key] == trimmedName) {
+      return;
+    }
+
+    clientNames[key] = _getUniqueClientName(trimmedName, key);
   }
 
   String _getUniqueClientName(String baseName, int currentKey) {
-    final count = clientNames.values.where((n) => n.startsWith(baseName)).length;
-    return count > 0 ? "$baseName (${count + 1})" : baseName;
+    final duplicates =
+        clientNames.entries.where((e) => e.key != currentKey && e.value.split(" (").first == baseName).length;
+    return duplicates > 0 ? "$baseName (${duplicates + 1})" : baseName;
   }
 
   String getDisplayName(int key) {
@@ -53,8 +65,9 @@ class TabStateController extends GetxController {
   }
 
   void setCustomName(int key, String name) {
-    if (name.trim().isNotEmpty) {
-      customNames[key] = name.trim();
+    final trimmed = name.trim();
+    if (trimmed.isNotEmpty) {
+      customNames[key] = trimmed;
     } else {
       customNames.remove(key);
     }

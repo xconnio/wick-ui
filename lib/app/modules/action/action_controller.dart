@@ -10,6 +10,7 @@ import "package:xconn/xconn.dart";
 
 class ActionController extends GetxController {
   final String instanceId = DateTime.now().millisecondsSinceEpoch.toString();
+  bool _isRefreshing = false;
   final Rx<ClientModel?> selectedClient = Rx<ClientModel?>(null);
   final RxList<String> logs = <String>[].obs;
   final RxString errorMessage = "".obs;
@@ -290,6 +291,7 @@ class ActionController extends GetxController {
         _addLog("Event received:\nargs:\n$formattedArgs\nkwargs:\n$formattedKwargs");
       });
       subscriptions[uri] = subscription;
+      _subscription = subscription as StreamSubscription?;
       selectedMethod.value = "unsubscribe";
       return Logs(data: "Subscribed to topic: $uri");
     } on Exception {
@@ -305,6 +307,9 @@ class ActionController extends GetxController {
     try {
       await session.unsubscribe(subscription);
       subscriptions.remove(uri);
+      if (identical(_subscription, subscription)) {
+        _subscription = null;
+      }
       selectedMethod.value = "subscribe";
       return Logs(data: "Unsubscribed from topic: $uri");
     } on Exception catch (e) {
@@ -331,8 +336,16 @@ class ActionController extends GetxController {
   }
 
   @override
-  void refresh() {
-    update();
+  void refresh([bool force = false]) {
+    if (_isRefreshing && !force) {
+      return;
+    }
+    _isRefreshing = true;
+    try {
+      update();
+    } finally {
+      _isRefreshing = false;
+    }
   }
 }
 
