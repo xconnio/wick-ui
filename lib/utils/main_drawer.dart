@@ -11,8 +11,7 @@ class MainDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      shape: const RoundedRectangleBorder(
-      ),
+      shape: const RoundedRectangleBorder(),
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
