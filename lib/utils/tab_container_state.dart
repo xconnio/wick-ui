@@ -252,7 +252,7 @@ class TabContainerState extends State<TabContainerWidget> with TickerProviderSta
                           indicator: UnderlineTabIndicator(
                             borderSide: BorderSide(
                               color: blueAccentColor,
-                              width: 2,
+                              width: 4,
                             ),
                           ),
                         ),
