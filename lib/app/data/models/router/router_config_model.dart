@@ -1,6 +1,6 @@
 import "package:wick_ui/app/data/models/authenticator/authenticator_config.dart";
 import "package:wick_ui/app/data/models/router/realm_config.dart";
-import "package:wick_ui/app/data/models/router/tranport_config.dart";
+import "package:wick_ui/app/data/models/router/transport_config.dart";
 
 class RouterConfigModel {
   RouterConfigModel({

@@ -1,3 +1,4 @@
+import "dart:async";
 import "dart:developer";
 import "dart:io";
 import "package:flutter/material.dart";
@@ -7,7 +8,7 @@ import "package:path_provider/path_provider.dart";
 import "package:wick_ui/app/data/models/authenticator/authenticator_config.dart";
 import "package:wick_ui/app/data/models/router/realm_config.dart";
 import "package:wick_ui/app/data/models/router/router_config_model.dart";
-import "package:wick_ui/app/data/models/router/tranport_config.dart";
+import "package:wick_ui/app/data/models/router/transport_config.dart";
 import "package:wick_ui/utils/state_manager.dart";
 import "package:wick_ui/wamp_util.dart";
 import "package:xconn/xconn.dart";
@@ -63,15 +64,31 @@ class RouterController extends GetxController with StateManager {
         if ((runningRouters[realm.name] ?? false) && activeRouters[realm.name] == null) {
           try {
             final transport = config.transports.first;
-            final server = startRouter("localhost", transport.port, [realm.name]);
-            activeRouters[realm.name] = server;
-            log("RouterController: Restored router '${realm.name}' on port ${transport.port}");
+            if (await isPortAvailable(transport.port)) {
+              final server = startRouter("localhost", transport.port, [realm.name]);
+              activeRouters[realm.name] = server;
+              log("RouterController: Restored router '${realm.name}' on port ${transport.port}");
+            } else {
+              runningRouters[realm.name] = false;
+              log("RouterController: Failed to restore router '${realm.name}' - port in use");
+            }
           } on Exception catch (e) {
             runningRouters[realm.name] = false;
             log("RouterController: Failed to restore router '${realm.name}': $e");
           }
         }
       }
+    }
+    await saveRouterState();
+  }
+
+  Future<bool> isPortAvailable(int port, {String host = "localhost"}) async {
+    try {
+      final socket = await ServerSocket.bind(host, port);
+      await socket.close();
+      return true;
+    } on Exception catch (_) {
+      return false;
     }
   }
 
@@ -80,40 +97,52 @@ class RouterController extends GetxController with StateManager {
     try {
       final config = routerConfigs.firstWhere(
         (c) => c.realms.contains(realm),
-        orElse: () {
-          log("RouterController: No config found for realm '${realm.name}'");
-          return RouterConfigModel(
-            version: "1",
-            name: "Unnamed Router",
-            realms: [realm],
-            transports: [
-              TransportConfig(port: 8080, serializers: ["json"]),
-            ],
-            authenticators: AuthenticatorConfig(
-              cryptosign: [],
-              wampcra: [],
-              ticket: [],
-              anonymous: [],
-            ),
-          );
-        },
+        orElse: () => RouterConfigModel(
+          version: "1",
+          name: "Unnamed Router",
+          realms: [realm],
+          transports: [
+            TransportConfig(port: 8080, serializers: ["json"]),
+          ],
+          authenticators: AuthenticatorConfig(
+            cryptosign: [],
+            wampcra: [],
+            ticket: [],
+            anonymous: [],
+          ),
+        ),
       );
+
       final transport = config.transports.first;
       if (runningRouters[realm.name] ?? false) {
         log("RouterController: Router '${realm.name}' already running");
         return;
       }
+
       log("RouterController: Starting router '${realm.name}' on port ${transport.port}");
+
+      if (!await isPortAvailable(transport.port)) {
+        log("RouterController: Port ${transport.port} already in use.");
+        Get.snackbar(
+          "Error",
+          "Port ${transport.port} already in use.",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
       final server = startRouter("localhost", transport.port, [realm.name]);
       activeRouters[realm.name] = server;
-      runningRouters.update(realm.name, (value) => true, ifAbsent: () => true);
-      log("RouterController: Set runningRouters[${realm.name}] = true, map: $runningRouters");
+      runningRouters[realm.name] = true;
+
       await saveRouterState();
       routerConfigs.refresh();
+
+      log("RouterController: Successfully started router '${realm.name}'");
     } on Exception catch (e, stackTrace) {
-      log("RouterController: Failed to start router '${realm.name}': $e\nStackTrace: $stackTrace");
-      runningRouters.update(realm.name, (value) => false, ifAbsent: () => false);
-      log("RouterController: Set runningRouters[${realm.name}] = false, map: $runningRouters");
+      log("RouterController: Failed to start router '${realm.name}': $e\n$stackTrace");
+      runningRouters[realm.name] = false;
+      activeRouters.remove(realm.name);
       await saveRouterState();
       routerConfigs.refresh();
     }
@@ -123,26 +152,28 @@ class RouterController extends GetxController with StateManager {
     log("RouterController: Attempting to stop router '$realmName'");
     try {
       final server = activeRouters[realmName];
-      if (server == null) {
-        log("RouterController: No active server found for '$realmName'");
-        runningRouters.update(realmName, (value) => false, ifAbsent: () => false);
-        log("RouterController: Set runningRouters[$realmName] = false, map: $runningRouters");
-        await saveRouterState();
-        routerConfigs.refresh();
-        return;
+      if (server != null) {
+        log("RouterController: Closing server for '$realmName'");
+        try {
+          await server.close();
+          log("RouterController: Server closed for '$realmName'");
+        } on Exception catch (e) {
+          log("RouterController: Error closing server for '$realmName': $e");
+        }
+        activeRouters.remove(realmName);
       }
-      log("RouterController: Closing server for '$realmName'");
-      await server.close();
-      activeRouters.remove(realmName);
-      runningRouters.update(realmName, (value) => false, ifAbsent: () => false);
-      log("RouterController: Set runningRouters[$realmName] = false, map: $runningRouters");
+
+      runningRouters[realmName] = false;
+
       await saveRouterState();
-      log("RouterController: Successfully stopped router '$realmName'");
       routerConfigs.refresh();
+
+      log("RouterController: Successfully stopped router '$realmName'");
     } on Exception catch (e, stackTrace) {
-      log("RouterController: Failed to stop router '$realmName': $e\nStackTrace: $stackTrace");
-      runningRouters.update(realmName, (value) => false, ifAbsent: () => false);
-      log("RouterController: Set runningRouters[$realmName] = false, map: $runningRouters");
+      log("RouterController: Failed to stop router '$realmName': $e\n$stackTrace");
+
+      runningRouters[realmName] = false;
+      activeRouters.remove(realmName);
       await saveRouterState();
       routerConfigs.refresh();
     }
@@ -151,17 +182,30 @@ class RouterController extends GetxController with StateManager {
   Future<void> stopAllRouters() async {
     log("RouterController: Stopping all routers");
     try {
-      for (final server in activeRouters.values) {
-        await server.close();
-        log("RouterController: Closed a server");
+      for (final entry in activeRouters.entries) {
+        try {
+          log("RouterController: Closing server for '${entry.key}'");
+          await entry.value.close();
+          log("RouterController: Server closed for '${entry.key}'");
+        } on Exception catch (e) {
+          log("RouterController: Error closing server for '${entry.key}': $e");
+        }
       }
+      activeRouters.clear();
+
+      runningRouters.updateAll((key, value) => false);
+
+      await clearRouterState();
+      routerConfigs.refresh();
+
+      log("RouterController: All routers stopped and state cleared");
+    } on Exception catch (e) {
+      log("RouterController: Failed to stop all routers: $e");
+
       activeRouters.clear();
       runningRouters.updateAll((key, value) => false);
       await clearRouterState();
-      log("RouterController: All routers stopped and state cleared");
       routerConfigs.refresh();
-    } on Exception catch (e) {
-      log("RouterController: Failed to stop all routers: $e");
     }
   }
 
@@ -191,7 +235,10 @@ class RouterController extends GetxController with StateManager {
     }).toList();
   }
 
-  Future<bool> _isRouterNameUnique(String routerName, {int? excludeIndex}) async {
+  Future<bool> isRouterNameUnique(
+    String routerName, {
+    int? excludeIndex,
+  }) async {
     for (int i = 0; i < routerConfigs.length; i++) {
       if (excludeIndex != null && i == excludeIndex) {
         continue;
@@ -206,7 +253,7 @@ class RouterController extends GetxController with StateManager {
 
   Future<void> saveRouterConfig(RouterConfigModel config) async {
     try {
-      if (!await _isRouterNameUnique(config.name)) {
+      if (!await isRouterNameUnique(config.name)) {
         log("RouterController: Cannot save config, realm name '${config.name}' already exists");
         return;
       }
@@ -223,17 +270,12 @@ class RouterController extends GetxController with StateManager {
       log("RouterController: Saved router config: ${file.path}");
     } on Exception catch (e) {
       log("RouterController: Save failed: $e");
-      Get.snackbar(
-        "Error",
-        "Failed to save router config: $e",
-        snackPosition: SnackPosition.BOTTOM,
-      );
     }
   }
 
   Future<void> updateRouterConfig(int index, RouterConfigModel config) async {
     try {
-      if (!await _isRouterNameUnique(config.name, excludeIndex: index)) {
+      if (!await isRouterNameUnique(config.name, excludeIndex: index)) {
         log("RouterController: Cannot update config, realm name '${config.name}' already exists");
         return;
       }
@@ -428,7 +470,7 @@ class RouterController extends GetxController with StateManager {
                   if (formKey.currentState!.validate()) {
                     final newRouterName = nameController.text;
 
-                    if (index == null && !await _isRouterNameUnique(newRouterName)) {
+                    if (index == null && !await isRouterNameUnique(newRouterName)) {
                       nameError.value = 'Router name "$newRouterName" is already in use';
                       return;
                     }
