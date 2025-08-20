@@ -23,33 +23,36 @@ class RouterView extends StatelessWidget {
               itemCount: controller.routerConfigs.length,
               itemBuilder: (context, index) {
                 final config = controller.routerConfigs[index];
-                final realm = config.realms.isNotEmpty ? config.realms.first : null;
-                final transport = config.transports.isNotEmpty ? config.transports.first : null;
+                final realm = config.realms.firstOrNull;
+                final transport = config.transports.firstOrNull;
 
                 if (realm == null) {
                   return const SizedBox.shrink();
                 }
+
+                final isRunning = controller.runningRouters[realm.name] ?? false;
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: RouterCard(
                     controller: controller,
                     key: ValueKey(realm.name),
-                    routerName: config.name.isNotEmpty ? config.name : "",
+                    routerName: config.name,
                     realmName: realm.name,
-                    status: controller.runningRouters[realm.name] ?? false ? "Running" : "Stopped",
+                    status: isRunning ? "Running" : "Stopped",
                     realm: realm.name,
                     port: transport?.port.toString() ?? "N/A",
                     serializers: transport?.serializers.join(", ") ?? "None",
-                    isActive: controller.runningRouters[realm.name] ?? false,
-                    onEdit: () async => controller.createRouterConfig(index: index),
+                    isActive: isRunning,
+                    onEdit: () => controller.createRouterConfig(index: index),
                     onToggle: () async {
-                      if (controller.runningRouters[realm.name] ?? false) {
+                      if (isRunning) {
                         await controller.stopRouter(realm.name);
                       } else {
                         await controller.runRouter(realm);
                       }
                     },
-                    onDelete: () async => controller.deleteRouterConfig(index),
+                    onDelete: () => controller.deleteRouterConfig(index),
                   ),
                 );
               },
@@ -57,7 +60,6 @@ class RouterView extends StatelessWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          tooltip: "Create a new router",
           onPressed: controller.createRouterConfig,
           child: const Icon(Icons.add),
         ),
